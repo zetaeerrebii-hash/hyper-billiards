@@ -46,7 +46,10 @@ canvas{width:100%;height:auto;display:block;touch-action:none;border-radius:10px
 .cin.show{transform:scale(1);opacity:1}
 .cin img{width:72px;height:92px;image-rendering:pixelated}
 .cin b{display:block;font-family:var(--f-display);font-size:30px;color:var(--brass);letter-spacing:.08em;line-height:1.1}
-.cin span{font-size:18px;color:var(--ink)}
+.cin span{display:block;font-size:18px;color:var(--ink)}
+.cin small{display:block;font-size:14px;color:var(--muted);font-style:italic;max-width:260px;margin-top:2px}
+.cin.foul{border-color:#b04a3a}
+.cin.foul b{color:#e08a72}
 .win{pointer-events:auto;background:rgba(20,13,10,.88);border-radius:10px}
 .wincard{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}
 .wincard img{width:96px;height:122px;image-rendering:pixelated}
@@ -153,7 +156,7 @@ details ul{margin:8px 0 0;padding-left:18px}
     <canvas id="cv" width="1092" height="592" aria-label="Tavolo da biliardo: tocca o trascina per mirare"></canvas>
     <div class="zoom" id="zoomBox" hidden><button id="zIn" aria-label="Avvicina">+</button><button id="zOut" aria-label="Allontana">−</button></div>
     <div class="v3" id="v3" hidden aria-label="Vista dal punto di vista di chi tira: trascina per mirare"></div>
-    <div class="overlay"><div class="cin" id="cin"><img alt="" id="cinImg"><div><b>Cin cin!</b><span id="cinPts"></span></div></div></div>
+    <div class="overlay"><div class="cin" id="cin"><img alt="" id="cinImg"><div><b id="cinT">Cin cin!</b><span id="cinPts"></span><small id="cinD"></small></div></div></div>
     <div class="overlay win" id="win" hidden><div class="wincard"><img alt="" id="winImg"><h2 id="winTxt"></h2><div class="small" id="winScore"></div><button class="go" id="again" style="flex:none;padding:8px 24px">Nuova partita</button></div></div>
   </div>
   <div class="shootrow"><button class="go" id="shoot">Tira</button><button id="newg">Nuova partita</button></div>
@@ -207,9 +210,11 @@ details ul{margin:8px 0 0;padding-left:18px}
       <li>Quando sbagli e i punti vanno all'avversario, arriva il Vecio: cin cin.</li>
       <li>Birilli: esterno 2, interno 8, rosso 10 con altri birilli, 30 da solo. Pallino rosso colpito: 6.</li>
       <li>Se la tua biglia tocca una sponda prima di colpire l'avversaria, i punti del tiro raddoppiano.</li>
-      <li>Birilli abbattuti con la tua biglia: tutti i punti del tiro vanno all'avversario.</li>
-      <li>Prima il pallino rosso: 4 punti all'avversario, anche se hai fatto sponda prima.</li>
-      <li>Nessuna biglia toccata: 2 punti all'avversario, che ha la biglia in mano e mette la propria biglia dove vuole nella metà del tavolo opposta a quella dell'avversario.</li>
+      <li>Quando si beve, all'avversario vanno tutti i punti del tiro (birilli e pallino, raddoppiati se c'era la sponda) più la penalità, che non raddoppia mai.</li>
+      <li>Birilli abbattuti con la tua biglia dopo aver colpito l'avversaria: tutti i punti all'avversario, senza penalità.</li>
+      <li>Birilli abbattuti con la tua biglia prima di toccare l'avversaria: punti del tiro + 2, e l'avversario ha la biglia in mano.</li>
+      <li>Prima il pallino rosso: punti del tiro + 4 all'avversario, anche se hai fatto sponda prima.</li>
+      <li>Nessuna biglia toccata: punti del tiro + 2 all'avversario, che ha la biglia in mano e mette la propria biglia dove vuole nella metà del tavolo opposta a quella dell'avversario.</li>
       <li>L'effetto laterale passa alla biglia colpita: ne devia un poco la partenza dal lato opposto e le trasmette una parte dell'effetto, specchiato, che si vede quando arriva in sponda.</li>
       <li>I birilli si rialzano a ogni tiro.</li>
     </ul>
@@ -285,7 +290,7 @@ function step(st){
     if(b.x<R){b.x=R;hit=rail(b,-1,0)||hit;} if(b.x>PW-R){b.x=PW-R;hit=rail(b,1,0)||hit;}
     if(b.y<R){b.y=R;hit=rail(b,0,-1)||hit;} if(b.y>PH-R){b.y=PH-R;hit=rail(b,0,1)||hit;}
     if(hit&&k===st.ev.shooter&&!st.ev.first)st.ev.railFirst=true;
-    for(const p of st.pins){if(p.up&&Math.abs(p.x-b.x)<R+PR&&Math.hypot(p.x-b.x,p.y-b.y)<R+PR){p.up=false;st.ev.pinsBy.push({t:p.t,by:k});b.vx*=0.97;b.vy*=0.97;}}
+    for(const p of st.pins){if(p.up&&Math.abs(p.x-b.x)<R+PR&&Math.hypot(p.x-b.x,p.y-b.y)<R+PR){p.up=false;st.ev.pinsBy.push({t:p.t,by:k});if(k===st.ev.shooter&&!st.ev.first)st.ev.pinsBeforeFirst=true;b.vx*=0.97;b.vy*=0.97;}}
   }
   for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)collide(st,KEYS[i],KEYS[j]);
 }
@@ -344,11 +349,14 @@ function shotPoints(e){
   return{pts,parts};
 }
 function evaluate(e){
-  if(!e.first)return{to:'opp',pts:2,foul:'miss',inHand:true,text:'Fallo, nessuna biglia toccata'};
-  if(e.first==='r')return{to:'opp',pts:4,foul:'red',text:'Fallo, prima il pallino rosso'};
-  const {pts,parts}=shotPoints(e);
-  if(e.pinsBy.some(p=>p.by===e.shooter))return{to:'opp',pts,foul:'pins',parts,text:'Fallo, birilli con la tua biglia'};
-  return{to:'me',pts,parts,text:pts?parts.join(', '):'Tiro valido, nessun punto'};
+  const sp=shotPoints(e),own=e.pinsBy.some(p=>p.by===e.shooter);
+  let f=null;
+  if(!e.first)f={foul:'miss',pen:2,inHand:true,text:'Fallo, nessuna biglia toccata'};
+  else if(e.first==='r')f={foul:'red',pen:4,text:'Fallo, prima il pallino rosso'};
+  else if(e.pinsBeforeFirst)f={foul:'pins',pen:2,inHand:true,text:'Fallo, birilli prima della biglia avversaria'};
+  else if(own)f={foul:'pins',pen:0,text:'Birilli abbattuti con la tua biglia'};
+  if(f){if(e.pinsBeforeFirst)f.inHand=true;const parts=(f.pen?['penalità '+f.pen]:[]).concat(sp.parts);return Object.assign(f,{to:'opp',pts:sp.pts+f.pen,parts});}
+  return{to:'me',pts:sp.pts,parts:sp.parts,text:sp.pts?sp.parts.join(', '):'Tiro valido, nessun punto'};
 }
 const cpuValue=r=>r.to==='me'?r.pts+(r.pts?0:0.2):-(r.pts+(r.inHand?3:0));
 
@@ -395,14 +403,15 @@ function strike(){launch(S,curParams());moving=true;acc=0;if(mode==='train')msg(
 function settle(){
   moving=false;const r=evaluate(S.ev);S.pins=makePins();
   if(mode==='train'){
-    if(r.to==='me'){msg(r.pts?'<b>+'+r.pts+' punti</b> · '+r.text+'.':r.text+'.');}
-    else{msg('<b>'+r.text+':</b> '+r.pts+' punti all\'avversario.'+(r.parts&&r.parts.length?' ('+r.parts.join(', ')+')':''));if(r.pts)cheers('+'+r.pts+' all\'avversario');}
+    if(r.to==='me'){msg(r.pts?'<b>+'+r.pts+' punti</b> · '+r.text+'.':r.text+'.');if(r.pts)popup(CHARS.zibi.img,'+'+r.pts,'punti',r.parts);}
+    else{msg('<b>'+r.text+':</b> '+r.pts+' punti all\'avversario ('+r.parts.join(', ')+').');popup(CHARS.vecio.img,'Cin cin!','+'+r.pts+' all\'avversario',r.parts,true);}
     tipKey='';aimAtOpp();setSpin(0,0);return;
   }
   const t=match.turn,o=1-t,P=match.players,nm=i=>CHARS[P[i].char].name;
-  if(r.to==='me'){match.score[t]+=r.pts;msg(r.pts?'<b>+'+r.pts+' a '+nm(t)+'</b> · '+r.text+'.':nm(t)+': '+r.text.toLowerCase()+'.');}
-  else{match.score[o]+=r.pts;msg('<b>'+r.text+':</b> '+r.pts+' punti a '+nm(o)+'.'+(r.parts&&r.parts.length?' ('+r.parts.join(', ')+')':''));
-    if(r.pts)cheers('+'+r.pts+' a '+nm(o));}
+  if(r.to==='me'){match.score[t]+=r.pts;msg(r.pts?'<b>+'+r.pts+' a '+nm(t)+'</b> · '+r.text+'.':nm(t)+': '+r.text.toLowerCase()+'.');
+    if(r.pts)popup(CHARS[P[t].char].img,'+'+r.pts,'punti a '+nm(t),r.parts);}
+  else{match.score[o]+=r.pts;msg('<b>'+r.text+':</b> '+r.pts+' punti a '+nm(o)+' ('+r.parts.join(', ')+').');
+    popup(CHARS.vecio.img,'Cin cin!',nm(t)+' beve: +'+r.pts+' a '+nm(o),r.parts,true);}
   match.turn=o;
   if(r.inHand){inHand={me:o?'y':'w',op:t?'y':'w'};placeInHand();
     if(!P[o].cpu)msg($('msg').innerHTML+' '+nm(o)+' ha la biglia in mano: trascina la tua biglia nella metà illuminata.');}
@@ -420,7 +429,7 @@ function placeInHand(){
 
 /* cin cin */
 let cinT=null;
-function cheers(txt){const c=$('cin');$('cinPts').textContent=txt;c.classList.add('show');clearTimeout(cinT);cinT=setTimeout(()=>c.classList.remove('show'),2200);}
+function popup(img,title,line,parts,foul){const c=$('cin');$('cinImg').src=img;$('cinT').textContent=title;$('cinPts').textContent=line;$('cinD').textContent=(parts||[]).join(' · ');c.classList.toggle('foul',!!foul);c.classList.add('show');clearTimeout(cinT);cinT=setTimeout(()=>c.classList.remove('show'),foul?2600:2200);}
 
 /* computer */
 let gen=0;
@@ -824,7 +833,6 @@ function redo(){if(!trainSnap||busy())return;KEYS.forEach(k=>Object.assign(S.bal
 $('redo').onclick=redo;
 $('resetTrain').onclick=()=>{cancelAll();trainS=freshTable();S=trainS;aimAtOpp();msg('Posizione iniziale.');};
 
-$('cinImg').src=CHARS.vecio.img;
 trainS=freshTable();S=trainS;setPower(40);setSpin(0,0);aimAtOpp();applyMode();
 try{if(localStorage.getItem('mg-view')==='3d')setView('3d');}catch(e){}
 requestAnimationFrame(frame);
