@@ -252,7 +252,7 @@ function makePins(){
 }
 const ball=(x,y)=>({x,y,vx:0,vy:0,side:0,fol:0});
 const freshTable=()=>({balls:{w:ball(220,250),y:ball(935,250),r:ball(750,250)},pins:makePins(),ev:null});
-const turnIdx=()=>mode==='match'?match.turn:0;
+const turnIdx=()=>mode==='match'&&match?match.turn:0;
 const me=()=>turnIdx()?'y':'w', opp=()=>turnIdx()?'w':'y';
 const isCpuTurn=()=>mode==='match'&&match&&!match.over&&match.players[match.turn].cpu;
 const busy=()=>moving||!!cueAnim||thinking;
@@ -410,7 +410,7 @@ function settle(){
   const win=match.score.findIndex(s=>s>=match.target);
   if(win>=0){match.over=true;showWin(win);return;}
   aimAtOpp();setSpin(0,0);
-  if(isCpuTurn())setTimeout(cpuPlay,700);
+  if(isCpuTurn())laterCpu(700);
 }
 function placeInHand(){
   const m=S.balls[inHand.me],h=allowedHalf();if(halfOf(m.x)===h)return;
@@ -423,7 +423,18 @@ let cinT=null;
 function cheers(txt){const c=$('cin');$('cinPts').textContent=txt;c.classList.add('show');clearTimeout(cinT);cinT=setTimeout(()=>c.classList.remove('show'),2200);}
 
 /* computer */
+let gen=0;
+function laterCpu(ms){const g=gen;setTimeout(()=>{if(g===gen)cpuPlay();},ms);}
+function cancelAll(){gen++;moving=false;cueAnim=null;thinking=false;acc=0;dragBall=null;aiming=false;predKey='';tipKey='';if(V3.ok){V3.hintKey='';V3.aimKey='';V3.snap=true;}}
+function finishNow(){
+  gen++;thinking=false;
+  if(cueAnim){cueAnim=null;strike();}
+  let n=0;while(moving&&n<240*40){step(S);n++;if(still(S)){stopAll(S);settle();}}
+  if(moving){stopAll(S);settle();}
+  gen++;
+}
 function cpuPlay(){
+  const g=gen;
   if(!isCpuTurn()||busy())return;
   const L=LEVELS[match.players[match.turn].level-1],sh=me(),op=opp();thinking=true;
   $('turn').innerHTML='a '+match.target+'<b>'+CHARS[match.players[match.turn].char].name+' studia il tiro…</b>';
@@ -442,6 +453,7 @@ function cpuPlay(){
     for(let k=0;k<(L.n>=4?6:3);k++)cands.push({place,P:{shooter:sh,angle:so.ang+(Math.random()-0.5)*0.6,power:Math.max(10,Math.min(100,so.pow+(Math.random()-0.5)*16)),sx:0,sy:k%2?-0.3:0}});}}
   let i=0;const scored=[];
   function chunk(){
+    if(g!==gen)return;
     const end=Math.min(cands.length,i+8);
     for(;i<end;i++){const c=cands[i];c.v=cpuValue(evaluate(simulate(c.P,c.place,false).ev));scored.push(c);}
     if(i<cands.length){setTimeout(chunk,0);return;}
@@ -454,7 +466,7 @@ function cpuPlay(){
     if(pick.place){S.balls[sh].x=pick.place.x;S.balls[sh].y=pick.place.y;}
     const gauss=()=>{let u=0;for(let q=0;q<4;q++)u+=Math.random();return (u-2)/0.58;};
     setAngle(pick.P.angle+gauss()*L.na);setPower(pick.P.power*(1+gauss()*L.np/100));setSpin(pick.P.sx,pick.P.sy);
-    thinking=false;setTimeout(()=>{if(isCpuTurn()&&!busy())fire();},650);
+    thinking=false;setTimeout(()=>{if(g===gen&&isCpuTurn()&&!busy())fire();},650);
   }
   setTimeout(chunk,30);
 }
@@ -788,9 +800,9 @@ function updateScore(){
   $('turn').innerHTML='a '+match.target+'<b>'+(match.over?'Fine':'Tocca a '+CHARS[P[match.turn].char].name)+'</b>';
 }
 function startMatch(){
-  const cpu=setupSel.level>0;
+  cancelAll();const cpu=setupSel.level>0;
   match={players:[{char:setupSel.me,cpu:false},{char:setupSel.opp,cpu,level:setupSel.level||0}],score:[0,0],turn:0,target:setupSel.target,over:false,S:freshTable()};
-  S=match.S;inHand={me:'w',op:'y'};$('win').hidden=true;applyMode();aimAtOpp();setSpin(0,0);
+  S=match.S;inHand={me:'w',op:'y'};$('win').hidden=true;applyMode();aimAtOpp();setSpin(0,0);setPower(40);
   msg('Inizia '+CHARS[setupSel.me].name+': trascina la bianca dove vuoi nella metà sinistra, poi tira sulla gialla.');
 }
 function showWin(i){const c=CHARS[match.players[i].char];$('winImg').src=c.img;$('winTxt').textContent='Vince '+c.name;$('winScore').textContent=match.score[0]+' a '+match.score[1];$('win').hidden=false;updateScore();}
@@ -803,14 +815,14 @@ function applyMode(){
   $('newg').textContent=tr?'Ripeti tiro':'Nuova partita';
   updateScore();
 }
-$('tabTrain').onclick=()=>{if(busy())return;mode='train';S=trainS;inHand=null;applyMode();aimAtOpp();tipKey='';msg('Allenamento: trascina le biglie e prova i tiri.');};
-$('tabMatch').onclick=()=>{if(busy())return;mode='match';S=match?match.S:freshTable();if(!match){renderSetup();}else inHand=match.inHandSaved||null;applyMode();if(match)aimAtOpp();msg(match?'Partita in corso.':'Scegli i personaggi e il livello, poi inizia.');if(isCpuTurn())setTimeout(cpuPlay,500);};
+$('tabTrain').onclick=()=>{if(mode==='train')return;finishNow();if(match)match.inHandSaved=inHand;mode='train';cancelAll();S=trainS;inHand=null;applyMode();aimAtOpp();tipKey='';msg('Allenamento: trascina le biglie e prova i tiri.');};
+$('tabMatch').onclick=()=>{if(mode==='match')return;finishNow();cancelAll();mode='match';S=match?match.S:freshTable();if(!match){renderSetup();}else inHand=match.inHandSaved||null;applyMode();if(match)aimAtOpp();msg(match?'Partita in corso.':'Scegli i personaggi e il livello, poi inizia.');if(isCpuTurn())laterCpu(500);};
 $('startMatch').onclick=startMatch;
-$('again').onclick=()=>{match=null;S=freshTable();$('win').hidden=true;renderSetup();applyMode();msg('Scegli i personaggi e il livello, poi inizia.');};
-$('newg').onclick=()=>{if(busy())return;if(mode==='train'){redo();return;}match=null;S=freshTable();inHand=null;renderSetup();applyMode();msg('Scegli i personaggi e il livello, poi inizia.');};
+$('again').onclick=()=>{cancelAll();match=null;inHand=null;S=freshTable();$('win').hidden=true;renderSetup();applyMode();msg('Scegli i personaggi e il livello, poi inizia.');};
+$('newg').onclick=()=>{if(mode==='train'){if(busy())return;redo();return;}cancelAll();match=null;S=freshTable();inHand=null;renderSetup();applyMode();msg('Scegli i personaggi e il livello, poi inizia.');};
 function redo(){if(!trainSnap||busy())return;KEYS.forEach(k=>Object.assign(S.balls[k],trainSnap[k],{vx:0,vy:0,side:0,fol:0}));setAngle(trainSnap.angle);setPower(trainSnap.power);setSpin(trainSnap.sx,trainSnap.sy);msg('Posizione del tiro precedente ripristinata.');}
 $('redo').onclick=redo;
-$('resetTrain').onclick=()=>{if(busy())return;trainS=freshTable();S=trainS;aimAtOpp();msg('Posizione iniziale.');};
+$('resetTrain').onclick=()=>{cancelAll();trainS=freshTable();S=trainS;aimAtOpp();msg('Posizione iniziale.');};
 
 $('cinImg').src=CHARS.vecio.img;
 trainS=freshTable();S=trainS;setPower(40);setSpin(0,0);aimAtOpp();applyMode();
