@@ -394,7 +394,7 @@ function settle(){
   if(mode==='train'){
     if(r.to==='me'){msg(r.pts?'<b>+'+r.pts+' punti</b> · '+r.text+'.':r.text+'.');}
     else{msg('<b>'+r.text+':</b> '+r.pts+' punti all\'avversario.'+(r.parts&&r.parts.length?' ('+r.parts.join(', ')+')':''));if(r.pts)cheers('+'+r.pts+' all\'avversario');}
-    tipKey='';aimAtOpp();return;
+    tipKey='';aimAtOpp();setSpin(0,0);return;
   }
   const t=match.turn,o=1-t,P=match.players,nm=i=>CHARS[P[i].char].name;
   if(r.to==='me'){match.score[t]+=r.pts;msg(r.pts?'<b>+'+r.pts+' a '+nm(t)+'</b> · '+r.text+'.':nm(t)+': '+r.text.toLowerCase()+'.');}
@@ -717,12 +717,34 @@ function render3D(){
     const tip=P3(b.x-dx*g*Math.cos(e)-dy*off,b.y-dy*g*Math.cos(e)+dx*off,R+sy*R*0.6+g*Math.sin(e));
     V3.cue.position.copy(tip);V3.cue.lookAt(tip.x-dx*Math.cos(e),tip.y+Math.sin(e),tip.z-dy*Math.cos(e));}
   /* camera alle spalle di chi tira */
-  if(!moving){V3.aimPos=P3(b.x-dx*290,b.y-dy*290,115);V3.aimLook=P3(b.x+dx*230,b.y+dy*230,0);}
-  const tp=moving?V3.aimPos.clone().add(new T.Vector3(0,70,0)):V3.aimPos,tl=V3.aimLook;
-  if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,0.12);V3.look.lerp(tl,0.12);}
+  const now=performance.now();
+  if(!moving){const key=[angle,b.x,b.y,V3.cam.aspect].join('|');if(key!==V3.aimKey){V3.aimKey=key;const f=aimPose(b,dx,dy);V3.aimPos=f.pos;V3.aimLook=f.look;}V3.standPos=null;}
+  else{V3.lastMove=now;if(!V3.standPos){const f=standPose(b,dx,dy);V3.standPos=f.pos;V3.standLook=f.look;}}
+  const tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
+  const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
+  if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,k);V3.look.lerp(tl,k);}
   V3.cam.position.copy(V3.pos);V3.cam.lookAt(V3.look);
   hints3D();
   V3.r.render(V3.sc,V3.cam);
+}
+function fitPose(look,ux,uz,k,dmin){
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const ex=PW/2+40,ez=PH/2+40,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let d=dmin;
+  for(let i=0;i<60;i++){
+    c.position.set(look.x-ux*d,d*k,look.z-uz*d);c.lookAt(look);c.updateMatrixWorld();
+    if(cs.every(([x,z])=>{v.set(x,0,z).project(c);return v.z<1&&Math.abs(v.x)<0.97&&Math.abs(v.y)<0.94;}))break;
+    d+=35;}
+  return{pos:c.position.clone(),look:look.clone()};
+}
+function aimPose(b,dx,dy){
+  let t=(PW/2-b.x)*dx+(PH/2-b.y)*dy;t=Math.max(150,Math.min(650,t));
+  const look=P3(b.x+dx*t,b.y+dy*t,0);
+  return fitPose(look,dx,dy,0.42,t+220);
+}
+function standPose(b,dx,dy){
+  const sx0=b.x-dx*200,sy0=b.y-dy*200,cxp=PW/2-sx0,cyp=PH/2-sy0,L=Math.hypot(cxp,cyp);
+  const ux=L>60?cxp/L:dx,uz=L>60?cyp/L:dy;
+  return fitPose(new V3.T.Vector3(0,0,0),ux,uz,1.05,Math.max(L,300));
 }
 function setView(v){
   if(v==='3d'&&!init3D()){msg('La vista giocatore non è disponibile su questo dispositivo.');v='plan';}
