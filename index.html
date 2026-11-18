@@ -53,6 +53,8 @@ canvas{width:100%;height:auto;display:block;touch-action:none;border-radius:10px
 .wincard h2{font-family:var(--f-display);color:var(--brass);margin:0;font-size:26px;letter-spacing:.08em}
 .viewrow{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:-4px}
 .viewrow .tabs button{min-height:34px;padding:5px 14px;font-size:12px}
+.zoom{position:absolute;top:10px;right:10px;z-index:2;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:42px;height:42px;min-height:0;padding:0;font-size:22px;line-height:1;background:rgba(28,19,16,.75);border-color:var(--brass-dk)}
 .v3{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#150e0b;cursor:ew-resize}
 @media(max-width:600px){.v3{aspect-ratio:4/3}}
 .shootrow{display:flex;gap:8px}
@@ -149,6 +151,7 @@ details ul{margin:8px 0 0;padding-left:18px}
   <div class="viewrow"><span>Vista</span><div class="tabs" role="group" aria-label="Vista"><button id="vPlan" aria-pressed="true">Pianta</button><button id="vPlayer" aria-pressed="false">Giocatore</button></div></div>
   <div class="stage">
     <canvas id="cv" width="1092" height="592" aria-label="Tavolo da biliardo: tocca o trascina per mirare"></canvas>
+    <div class="zoom" id="zoomBox" hidden><button id="zIn" aria-label="Avvicina">+</button><button id="zOut" aria-label="Allontana">−</button></div>
     <div class="v3" id="v3" hidden aria-label="Vista dal punto di vista di chi tira: trascina per mirare"></div>
     <div class="overlay"><div class="cin" id="cin"><img alt="" id="cinImg"><div><b>Cin cin!</b><span id="cinPts"></span></div></div></div>
     <div class="overlay win" id="win" hidden><div class="wincard"><img alt="" id="winImg"><h2 id="winTxt"></h2><div class="small" id="winScore"></div><button class="go" id="again" style="flex:none;padding:8px 24px">Nuova partita</button></div></div>
@@ -674,10 +677,16 @@ function init3D(){
   V3.lin=lin;Object.assign(V3,{ok:true,T,r,sc,cam,balls,pins,cue,hints,el,pos:new T.Vector3(),look:new T.Vector3(),snap:true,hintKey:''});
   const rs=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();};
   rs();if(window.ResizeObserver)new ResizeObserver(rs).observe(el);else window.addEventListener('resize',rs);
-  let drag=null;
-  el.addEventListener('pointerdown',e=>{if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;el.setPointerCapture(e.pointerId);drag={x:e.clientX,a:angle};});
-  el.addEventListener('pointermove',e=>{if(drag)setAngle(drag.a+(e.clientX-drag.x)*0.15);});
-  el.addEventListener('pointerup',()=>drag=null);el.addEventListener('pointercancel',()=>drag=null);
+  let drag=null;const pts=new Map();let pinch=null;
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:zoom3D};drag=null;return;}
+    if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;drag={x:e.clientX,a:angle};});
+  el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];setZoom(pinch.z+(Math.hypot(a.x-b.x,a.y-b.y)/pinch.d-1)*0.9);return;}
+    if(drag)setAngle(drag.a+(e.clientX-drag.x)*0.15);});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(!pts.size)drag=null;};
+  el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+  el.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom3D-e.deltaY*0.0012);},{passive:false});
   return true;
 }
 function clearHints3D(){const g=V3.hints;while(g.children.length){const c=g.children.pop();c.geometry&&c.geometry.dispose();c.material&&c.material.dispose();}}
@@ -718,7 +727,7 @@ function render3D(){
     V3.cue.position.copy(tip);V3.cue.lookAt(tip.x-dx*Math.cos(e),tip.y+Math.sin(e),tip.z-dy*Math.cos(e));}
   /* camera alle spalle di chi tira */
   const now=performance.now();
-  if(!moving){const key=[angle,b.x,b.y,V3.cam.aspect].join('|');if(key!==V3.aimKey){V3.aimKey=key;const f=aimPose(b,dx,dy);V3.aimPos=f.pos;V3.aimLook=f.look;}V3.standPos=null;}
+  if(!moving){const key=[angle,b.x,b.y,V3.cam.aspect,zoom3D].join('|');if(key!==V3.aimKey){V3.aimKey=key;const f=aimPose(b,dx,dy);V3.aimPos=f.pos;V3.aimLook=f.look;}V3.standPos=null;}
   else{V3.lastMove=now;if(!V3.standPos){const f=standPose(b,dx,dy);V3.standPos=f.pos;V3.standLook=f.look;}}
   const tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
   const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
@@ -738,9 +747,12 @@ function fitPose(look,ux,uz,k,dmin){
 }
 function aimPose(b,dx,dy){
   let t=(PW/2-b.x)*dx+(PH/2-b.y)*dy;t=Math.max(150,Math.min(650,t));
-  const look=P3(b.x+dx*t,b.y+dy*t,0);
-  return fitPose(look,dx,dy,0.42,t+220);
+  const far=fitPose(P3(b.x+dx*t,b.y+dy*t,0),dx,dy,0.3,t+220);
+  const near={pos:P3(b.x-dx*230,b.y-dy*230,70),look:P3(b.x+dx*300,b.y+dy*300,0)};
+  const z=zoom3D;return{pos:far.pos.clone().lerp(near.pos,z),look:far.look.clone().lerp(near.look,z)};
 }
+let zoom3D=0.55;try{const zz=parseFloat(localStorage.getItem('mg-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
+function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';try{localStorage.setItem('mg-zoom',String(zoom3D));}catch(e){}}
 function standPose(b,dx,dy){
   const sx0=b.x-dx*200,sy0=b.y-dy*200,cxp=PW/2-sx0,cyp=PH/2-sy0,L=Math.hypot(cxp,cyp);
   const ux=L>60?cxp/L:dx,uz=L>60?cyp/L:dy;
@@ -749,11 +761,12 @@ function standPose(b,dx,dy){
 function setView(v){
   if(v==='3d'&&!init3D()){msg('La vista giocatore non è disponibile su questo dispositivo.');v='plan';}
   view=v;$('vPlan').setAttribute('aria-pressed',String(v==='plan'));$('vPlayer').setAttribute('aria-pressed',String(v==='3d'));
-  $('cv').hidden=v==='3d';$('v3').hidden=v!=='3d';
+  $('cv').hidden=v==='3d';$('v3').hidden=v!=='3d';$('zoomBox').hidden=v!=='3d';
   if(v==='3d'){V3.snap=true;V3.hintKey='';window.dispatchEvent(new Event('resize'));
-    if(inHand||mode==='train')msg(mode==='train'?'Vista giocatore: trascina a destra o sinistra per mirare. Per spostare le biglie torna alla pianta.':'Per posizionare la biglia in mano torna alla vista in pianta.');}
+    if(inHand||mode==='train')msg(mode==='train'?'Vista giocatore: trascina a destra o sinistra per mirare, usa + e − (o due dita) per avvicinarti. Per spostare le biglie torna alla pianta.':'Per posizionare la biglia in mano torna alla vista in pianta.');}
   try{localStorage.setItem('mg-view',v);}catch(e){}
 }
+$('zIn').onclick=()=>setZoom(zoom3D+0.15);$('zOut').onclick=()=>setZoom(zoom3D-0.15);
 $('vPlan').onclick=()=>setView('plan');$('vPlayer').onclick=()=>setView('3d');
 
 /* modalità e schermate */
