@@ -1016,6 +1016,9 @@ function render3D(){
   const tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
   const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
   if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,k);V3.look.lerp(tl,k);}
+  /* la camera non deve mai finire dentro o sotto la stecca: resta sempre sopra la sua linea */
+  if(V3.cue.visible){const bx=b.x-PW/2,bz=b.y-PH/2,d=-((V3.pos.x-bx)*dx+(V3.pos.z-bz)*dy),lat=Math.abs((V3.pos.x-bx)*(-dy)+(V3.pos.z-bz)*dx);
+    if(d>0&&d<b.r+4+pullNow+640&&lat<40){const cueH=b.r+(d)*Math.tan(6*Math.PI/180)+12;if(V3.pos.y<cueH+30)V3.pos.y=cueH+30;}}
   V3.cam.position.copy(V3.pos);V3.cam.lookAt(V3.look);
   const showLamps=V3.pos.y<430;V3.lamps.forEach(m=>m.visible=showLamps);
   hints3D();
@@ -1045,10 +1048,16 @@ function fitHeight(hx,hz,look,h0){
   return{pos:c.position.clone(),look:look.clone()};
 }
 function aimPose(b,dx,dy){
-  const st=standSpot(b,dx,dy),look=P3((b.x+dx*220+PW/2)/2,(b.y+dy*220+PH/2)/2,0);
-  const far=fitHeight(st.x-PW/2,st.y-PH/2,look,180);
+  const st=standSpot(b,dx,dy),lk0=P3((b.x+dx*220+PW/2)/2,(b.y+dy*220+PH/2)/2,0);
+  const far=fitHeight(st.x-PW/2,st.y-PH/2,lk0,180);
   const near={pos:P3(b.x-dx*210,b.y-dy*210,60),look:P3(b.x+dx*300,b.y+dy*300,0)};
-  const z=zoom3D;return{pos:far.pos.clone().lerp(near.pos,z),look:far.look.clone().lerp(near.look,z)};
+  const z=zoom3D,pos=far.pos.clone().lerp(near.pos,z),look=far.look.clone().lerp(near.look,z);
+  /* la stecca deve restare in quadro: se il tratto vicino alla biglia esce dal basso, l'inquadratura si inclina verso la biglia */
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const bp=P3(b.x,b.y,b.r),q=new T.Vector3(),tgt=P3(b.x-dx*110,b.y-dy*110,b.r+110*Math.tan(6*Math.PI/180));
+  const cueH=b.r+Math.max(0,-((pos.x-(b.x-PW/2))*dx+(pos.z-(b.y-PH/2))*dy))*Math.tan(6*Math.PI/180)+42;if(pos.y<cueH)pos.y=cueH;
+  for(let i=0;i<14;i++){c.position.copy(pos);c.lookAt(look);c.updateMatrixWorld();q.copy(tgt).project(c);if(q.z<1&&q.y>-0.88)break;look.lerp(bp,0.18);}
+  return{pos,look};
 }
 let zoom3D=0.55;try{const zz=parseFloat(localStorage.getItem('mg-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
 function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';try{localStorage.setItem('mg-zoom',String(zoom3D));}catch(e){}}
