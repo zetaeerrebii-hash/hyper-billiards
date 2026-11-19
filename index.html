@@ -768,9 +768,9 @@ function advice(){
 function shotSVG(o,Q){
   const m=58,W=PW+2*m,H=PH+2*m,X=x=>(x+m).toFixed(1),Y=y=>(y+m).toFixed(1),sh=me(),op=opp();
   let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Schema del tiro consigliato">';
-  s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="14" fill="#5c2a17"/><rect x="'+(m-8)+'" y="'+(m-8)+'" width="'+(PW+16)+'" height="'+(PH+16)+'" fill="#14432c"/><rect x="'+m+'" y="'+m+'" width="'+PW+'" height="'+PH+'" fill="#1d5a3b"/>';
-  for(let i=1;i<8;i++){s+='<circle cx="'+X(i*DIA)+'" cy="'+(m/2-4)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+X(i*DIA)+'" cy="'+(H-m/2+4)+'" r="3.5" fill="#e6d3a3"/>';}
-  for(let j=1;j<4;j++){s+='<circle cx="'+(m/2-4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+(W-m/2+4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/>';}
+  s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="14" fill="#7f1b1e"/><rect x="'+(m-8)+'" y="'+(m-8)+'" width="'+(PW+16)+'" height="'+(PH+16)+'" fill="#2f8a6b"/><rect x="'+m+'" y="'+m+'" width="'+PW+'" height="'+PH+'" fill="#2e7a62"/>';
+  for(let i=0;i<=8;i++){s+='<circle cx="'+X(i*DIA)+'" cy="'+(m/2-4)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+X(i*DIA)+'" cy="'+(H-m/2+4)+'" r="3.5" fill="#e6d3a3"/>';}
+  for(let j=0;j<=4;j++){s+='<circle cx="'+(m/2-4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+(W-m/2+4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/>';}
   for(const p of S.pins)s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="4" fill="'+(p.t==='red'?'#c23a2c':'#f3ecdc')+'"/>';
   const path=(pts,c,dash,w)=>pts.length>1?'<polyline points="'+pts.map(q=>X(q[0])+','+Y(q[1])).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+dash+'" stroke-linejoin="round" stroke-linecap="round"/>':'';
   for(const k of KEYS)if(k!==sh&&Q.moved[k])s+=path(Q.paths[k],COL(k),'14 8',5);
@@ -808,20 +808,27 @@ function scheduleTips(){if(mode!=='train'||busy())return;clearTimeout(tipTimer);
 
 /* ===== disegno in pianta ===== */
 function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
-function dm(x,y){cx.beginPath();cx.moveTo(x,y-4.5);cx.lineTo(x+3.5,y);cx.lineTo(x,y+4.5);cx.lineTo(x-3.5,y);cx.closePath();cx.fill();}
+function dm(x,y){const h=y<RW||y>RW+PH;cx.beginPath();if(h){cx.moveTo(x-5,y);cx.lineTo(x,y-2.6);cx.lineTo(x+5,y);cx.lineTo(x,y+2.6);}else{cx.moveTo(x,y-5);cx.lineTo(x+2.6,y);cx.lineTo(x,y+5);cx.lineTo(x-2.6,y);}cx.closePath();cx.fill();}
 function drawTable(){
-  const W=cv.width,H=cv.height;cx.clearRect(0,0,W,H);
-  cx.fillStyle='#2b130c';rr(0,0,W,H,24);cx.fill();
-  cx.fillStyle='#5c2a17';rr(4,4,W-8,H-8,20);cx.fill();cx.strokeStyle='rgba(201,162,90,.55)';cx.lineWidth=1.5;rr(10,10,W-20,H-20,16);cx.stroke();
-  cx.fillStyle='#14432c';cx.fillRect(RW-CUSH,RW-CUSH,PW+2*CUSH,PH+2*CUSH);
-  cx.fillStyle='#1d5a3b';cx.fillRect(RW,RW,PW,PH);
+  const W=cv.width,H=cv.height,c0=RW-CUSH;cx.clearRect(0,0,W,H);
+  /* legno di mogano con giunti a 45° agli angoli */
+  cx.fillStyle='#7f1b1e';rr(0,0,W,H,6);cx.fill();
+  cx.strokeStyle='rgba(255,190,170,.18)';cx.lineWidth=1.2;cx.strokeRect(2.5,2.5,W-5,H-5);
+  cx.strokeStyle='rgba(0,0,0,.45)';cx.lineWidth=1.2;cx.beginPath();
+  for(const [ax,ay,bx,by] of [[0,0,c0,c0],[W,0,W-c0,c0],[0,H,c0,H-c0],[W,H,W-c0,H-c0]]){cx.moveTo(ax,ay);cx.lineTo(bx,by);}cx.stroke();
+  /* gomma delle sponde, rivestita di panno */
+  cx.fillStyle='#2f8a6b';cx.fillRect(c0,c0,PW+2*CUSH,PH+2*CUSH);
+  cx.strokeStyle='rgba(0,0,0,.35)';cx.lineWidth=1;cx.beginPath();
+  for(const [ax,ay,bx,by] of [[c0,c0,RW,RW],[W-c0,c0,W-RW,RW],[c0,H-c0,RW,H-RW],[W-c0,H-c0,W-RW,H-RW]]){cx.moveTo(ax,ay);cx.lineTo(bx,by);}cx.stroke();
+  cx.fillStyle='#2e7a62';cx.fillRect(RW,RW,PW,PH);
+  cx.strokeStyle='#4fae8a';cx.lineWidth=1.5;cx.strokeRect(RW-0.75,RW-0.75,PW+1.5,PH+1.5);
   /* mezzeria e bollini */
   cx.strokeStyle='rgba(255,255,255,.07)';cx.lineWidth=1;cx.beginPath();cx.moveTo(RW+PW/2,RW);cx.lineTo(RW+PW/2,RW+PH);cx.stroke();
-  cx.fillStyle='rgba(255,255,255,.18)';for(const [x,y] of [[PW*0.25,PH/2],[PW*0.75,PH/2],[SPOT,PH/2],[PW-SPOT,PH/2]]){cx.beginPath();cx.arc(RW+x,RW+y,1.4,0,7);cx.fill();}
-  const dy=RW-CUSH-WOOD/2;
-  cx.fillStyle='#e6d3a3';
-  for(let i=1;i<8;i++){dm(RW+i*DIA,dy);dm(RW+i*DIA,H-dy);}
-  for(let j=1;j<4;j++){dm(dy,RW+j*DIA);dm(W-dy,RW+j*DIA);}
+  cx.fillStyle='rgba(255,255,255,.35)';for(const [x,y] of [[PW*0.25,PH/2],[PW*0.75,PH/2],[SPOT,PH/2],[PW-SPOT,PH/2]]){cx.beginPath();cx.arc(RW+x,RW+y,1.5,0,7);cx.fill();}
+  /* diamanti: 9 sulle lunghe e 5 sulle corte, a 1/8 del piano, angoli compresi, al centro del legno */
+  const dy=c0/2;cx.fillStyle='#f4eedf';
+  for(let i=0;i<=8;i++){dm(RW+i*DIA,dy);dm(RW+i*DIA,H-dy);}
+  for(let j=0;j<=4;j++){dm(dy,RW+j*DIA);dm(W-dy,RW+j*DIA);}
 }
 function drawPins(){for(const p of S.pins){if(!p.up)continue;cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.arc(p.x+1.6,p.y+1.6,2.9,0,7);cx.fill();
   cx.fillStyle=p.t==='red'?'#c23a2c':'#f3ecdc';cx.beginPath();cx.arc(p.x,p.y,2.9,0,7);cx.fill();cx.strokeStyle='rgba(0,0,0,.45)';cx.lineWidth=0.8;cx.stroke();}}
@@ -914,16 +921,16 @@ function init3D(){
     const rod=new T.Mesh(new T.CylinderGeometry(2,2,600,8),std(0xc9a25a,.3,.8));rod.position.set(x,955,0);sc.add(rod);
   }
   const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;sc.add(o);return o;};
-  const felt=new T.Mesh(new T.PlaneGeometry(PW+60,PH+60),std(0x1d5a3b,.95));felt.rotation.x=-Math.PI/2;felt.receiveShadow=true;sc.add(felt);
+  const felt=new T.Mesh(new T.PlaneGeometry(PW+60,PH+60),std(0x1f5f4b,.95));felt.rotation.x=-Math.PI/2;felt.receiveShadow=true;sc.add(felt);
   /* sponde regolamentari: becco a 37 mm, larghezza totale 14,5 cm */
-  const CU=CUSH,CH=37/MM,FW=WOOD,FH=CH+12,TOP=CH+2,cush=std(0x174d33,.9),wood=std(0x5c2a17,.45,.05),woodDk=std(0x2b130c,.6),brass=std(0xe6d3a3,.35,.4);
+  const CU=CUSH,CH=37/MM,FW=WOOD,FH=CH+12,TOP=CH+2,cush=std(0x246f59,.9),wood=std(0x5a1114,.45,.05),woodDk=std(0x2b130c,.6),brass=std(0xe6d3a3,.35,.4);
   for(const s of[-1,1]){
     box(PW+2*CU,CH,CU,cush,0,CH/2,s*(PH/2+CU/2));box(CU,CH,PH,cush,s*(PW/2+CU/2),CH/2,0);
     box(PW+2*CU+2*FW,FH,FW,wood,0,TOP-FH/2,s*(PH/2+CU+FW/2));box(FW,FH,PH+2*CU,wood,s*(PW/2+CU+FW/2),TOP-FH/2,0);
   }
   const dg=new T.CylinderGeometry(3.6,3.6,1,4);
-  for(let i=1;i<8;i++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(-PW/2+i*DIA,TOP+0.5,s*(PH/2+CU+FW/2));sc.add(d);}
-  for(let j=1;j<4;j++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(s*(PW/2+CU+FW/2),TOP+0.5,-PH/2+j*DIA);sc.add(d);}
+  for(let i=0;i<=8;i++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(-PW/2+i*DIA,TOP+0.5,s*(PH/2+CU+FW/2));sc.add(d);}
+  for(let j=0;j<=4;j++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(s*(PW/2+CU+FW/2),TOP+0.5,-PH/2+j*DIA);sc.add(d);}
   box(PW+2*CU+2*FW,110,PH+2*CU+2*FW,woodDk,0,TOP-FH-55,0);
   for(const a of[-1,1])for(const b of[-1,1])box(70,330,70,woodDk,a*(PW/2+CU+FW-40),TOP-FH-110-165,b*(PH/2+CU+FW-40));
   const floor=new T.Mesh(new T.PlaneGeometry(8000,8000),std(0x24150e,.9));floor.rotation.x=-Math.PI/2;floor.position.y=TOP-FH-440;floor.receiveShadow=true;sc.add(floor);
@@ -1056,9 +1063,9 @@ function renderRules(){$('rulesNow').innerHTML=RULES[gid()];$('rulesSum').textCo
 
 /* ===== scuola: schemi dai manuali ===== */
 function tbl(ox,oy,s,inner,o){o=o||{};
-  const w=8*s,h=4*s;let svg='<rect x="'+(ox-9)+'" y="'+(oy-9)+'" width="'+(w+18)+'" height="'+(h+18)+'" rx="6" fill="#5c2a17"/><rect x="'+ox+'" y="'+oy+'" width="'+w+'" height="'+h+'" fill="#1d5a3b"/>';
-  for(let i=1;i<8;i++)svg+='<circle cx="'+(ox+i*s)+'" cy="'+(oy-4.5)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+i*s)+'" cy="'+(oy+h+4.5)+'" r="1.4" fill="#e6d3a3"/>';
-  for(let j=1;j<4;j++)svg+='<circle cx="'+(ox-4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+w+4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/>';
+  const w=8*s,h=4*s;let svg='<rect x="'+(ox-9)+'" y="'+(oy-9)+'" width="'+(w+18)+'" height="'+(h+18)+'" rx="6" fill="#7f1b1e"/><rect x="'+ox+'" y="'+oy+'" width="'+w+'" height="'+h+'" fill="#2e7a62"/>';
+  for(let i=0;i<=8;i++)svg+='<circle cx="'+(ox+i*s)+'" cy="'+(oy-4.5)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+i*s)+'" cy="'+(oy+h+4.5)+'" r="1.4" fill="#e6d3a3"/>';
+  for(let j=0;j<=4;j++)svg+='<circle cx="'+(ox-4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+w+4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/>';
   if(o.castle){const c=[ox+4*s,oy+2*s],d=s*0.19;svg+='<g fill="#f3ecdc">';for(const [a,b] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]].slice(0,o.castle))svg+='<circle cx="'+(c[0]+a*d)+'" cy="'+(c[1]+b*d)+'" r="1.6" '+(a||b?'':'fill="#c23a2c"')+'/>';svg+='</g>';}
   return svg+inner;
 }
@@ -1077,14 +1084,14 @@ function schoolCards(){
     p:'Il piano regolamentare misura 2,84 × 1,42 m e i diamanti stanno a 1/8 della lunghezza, cioè 35,5 cm l\'uno dall\'altro. Margutti ragiona in <b>punti</b>: un punto è 1/10 di diamante, 3,55 cm, circa due dita. Una biglia misura 61 mm, quasi due punti: per questo nessun conteggio è perfetto e serve a capire il tiro, non a sostituire la sensibilità. In questa app le sponde lunghe si leggono da 0 a 8 da sinistra, le corte da 0 a 4 dall\'alto, sempre in perpendicolare dal diamante.'});}
   /* 2 specchio */
   {const yo=64,S0=P(1.2,1.5,yo),A=P(6.2,1.5,yo),M=P(3.7,0,yo),Am=[A[0],yo-1.5*s];
-   let b='<rect x="'+(ox-9)+'" y="'+(yo-9)+'" width="258" height="138" rx="6" fill="#5c2a17"/><rect x="'+ox+'" y="'+yo+'" width="240" height="120" fill="#1d5a3b"/>';
+   let b='<rect x="'+(ox-9)+'" y="'+(yo-9)+'" width="258" height="138" rx="6" fill="#7f1b1e"/><rect x="'+ox+'" y="'+yo+'" width="240" height="120" fill="#2e7a62"/>';
    b+=ln([ox-9,yo],[ox+249,yo],'#e6d3a3','',1);
    b+=pl([S0,M,A],'#f3ecdc','',1.8)+ln(M,Am,'#c9a25a','4 3')+ln(A,Am,'#c9a25a','1 3',1)+ln(M,[M[0],yo+60],'#c9a25a','2 3',1)+bl(S0)+bl(A,'#b3262a')+'<circle cx="'+Am[0]+'" cy="'+Am[1]+'" r="4" fill="none" stroke="#c9a25a" stroke-dasharray="2 2"/>';
    b+=tx([Am[0]+6,Am[1]-6],'punto speculare',{s:8.5,a:'start',i:1})+tx([M[0],yo+72],'altezza = bisettrice',{s:8,i:1})+tx([S0[0],S0[1]+16],'partenza',{s:8})+tx([A[0],A[1]+16],'arrivo',{s:8});
    cards.push({t:'Lo specchio: il triangolo isoscele',src:'Margutti, lezione 1',svg:SV('0 0 286 196',b,'Traiettoria a una sponda con il punto speculare oltre la sponda'),
     p:'Se la biglia fosse un punto senza rotazione, uscirebbe dalla sponda con lo stesso angolo con cui è entrata, come la luce in uno specchio. Partenza e arrivo sono la base di un triangolo isoscele: si mira a metà della base. Prolungando tutte le traiettorie che arrivano nello stesso punto, si incontrano nel suo <b>punto speculare</b> oltre la sponda. Da qui la frase di Margutti: le traiettorie sul biliardo vanno cercate fuori dal biliardo. È il motivo per cui c\'è chi mira un gessetto o un segno sul muro.'});}
   /* 3 fisica della sponda */
-  {const R0=[40,30],I=[150,30];let b='<rect x="20" y="16" width="250" height="10" fill="#174d33"/><rect x="20" y="6" width="250" height="10" fill="#5c2a17"/><rect x="20" y="26" width="250" height="130" fill="#1d5a3b"/>';
+  {const R0=[40,30],I=[150,30];let b='<rect x="20" y="16" width="250" height="10" fill="#2f8a6b"/><rect x="20" y="6" width="250" height="10" fill="#7f1b1e"/><rect x="20" y="26" width="250" height="130" fill="#2e7a62"/>';
    b+=ln([60,140],I,'#f3ecdc','',1.8)+ln(I,[240,140],'#e8dcc2','4 3',1.2)+pl([I,[205,80],[226,140]],'#6fbf8f','',1.6)+pl([I,[200,74],[212,140]],'#dfae3a','',1.6)+pl([I,[196,70],[196,140]],'#e06d5b','',1.6);
    b+=tx([248,150],'geometria',{s:8,i:1})+tx([226,152],'battuto',{s:8,c:'#6fbf8f'})+tx([206,128],'semi',{s:8,c:'#dfae3a',a:'end'})+tx([188,148],'nuovo',{s:8,c:'#e06d5b',a:'end'})+tx([60,152],'entrata',{s:8});
    cards.push({t:'La sponda non è uno specchio',src:'Margutti, lezione 2',svg:SV('0 0 286 166',b,'Tre uscite dalla sponda per biliardo nuovo, semi-nuovo e battuto'),
@@ -1113,9 +1120,9 @@ function schoolCards(){
     p:'La garuffa, dall\'ingegner Giuseppe Garuffa, porta la battente al birillo rosso in due sponde, prima la corta poi la lunga, con effetto <b>contro</b>. Con il massimo effetto contro le diagonali di riferimento sono tre: dal diamante immaginario della corta al 2° della lunga, dal 1° della corta al 3° della lunga, dal 2° della corta a poco più del 4°. Fra il centro multiplo del senza effetto e quello del massimo contro stanno tutte le mezze garuffe; il mezzo effetto non sta a metà, perché il rapporto è esponenziale. Sul biliardo battuto le diagonali che sul nuovo vogliono mezzo effetto chiedono almeno ⅔.'});}
   /* 7 biliardi virtuali */
   {let b='';const mini=(x,y,w,h,f,st)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'" stroke="'+(st||'none')+'" stroke-dasharray="3 2"/>';
-   b+=mini(12,40,72,36,'#1d5a3b')+mini(30,52,72,36,'none','#c9a25a')+tx([56,112],'traslato',{s:9});
-   b+=mini(110,40,72,36,'#1d5a3b')+mini(128,22,36,72,'none','#c9a25a')+tx([146,112],'ruotato',{s:9});
-   b+=mini(206,40,72,36,'#1d5a3b')+mini(224,49,36,18,'none','#c9a25a')+tx([242,112],'scalato',{s:9});
+   b+=mini(12,40,72,36,'#2e7a62')+mini(30,52,72,36,'none','#c9a25a')+tx([56,112],'traslato',{s:9});
+   b+=mini(110,40,72,36,'#2e7a62')+mini(128,22,36,72,'none','#c9a25a')+tx([146,112],'ruotato',{s:9});
+   b+=mini(206,40,72,36,'#2e7a62')+mini(224,49,36,18,'none','#c9a25a')+tx([242,112],'scalato',{s:9});
    cards.push({t:'I biliardi virtuali',src:'Margutti, lezione 9',svg:SV('0 0 286 124',b,'Tre biliardi virtuali: traslato, ruotato e scalato'),
     p:'Un sistema imparato per arrivare in angolo si può riusare spostando idealmente il biliardo. <b>Traslato</b>: l\'angolo virtuale coincide con un altro punto, per esempio la mezzeria, come nell\'accosto lunga-lunga a zig-zag. <b>Ruotato</b> di 90°: è la base di candela, bricolle e tiri di più sponde. <b>Scalato</b>: un biliardo più piccolo per traversino, sponda al volo e due a mo\' di tre; anche il birillo rosso di tre sponde si legge come una scalatura. In fondo a essere spostati sono sempre i Centri Multipli.'});}
   /* 8 bricolla */
