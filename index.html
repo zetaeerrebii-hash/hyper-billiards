@@ -331,7 +331,7 @@ const SPOT=100/MM;           /* bollini a 10 cm dalla sponda corta */
 const CUSH=50/MM,WOOD=95/MM, RW=CUSH+WOOD; /* sponda: gomma + legno = 14,5 cm */
 const FR=270,DT=1/240,KEYS=['w','y','r'];
 const GAMES={
-  gor:{id:'gor',name:'Goriziana',full:'Goriziana · 9 birilli',reg:'regolamento ENDAS',col:{w:'#f3ecdc',y:'#dfae3a',r:'#b3262a'},pr:29.5/MM,
+  gor:{id:'gor',name:'Goriziana',full:'Goriziana · 9 birilli',reg:'regolamento FIBIS',col:{w:'#f3ecdc',y:'#dfae3a',r:'#b3262a'},pr:RB,
     bn:{w:'bianca',y:'gialla',r:'pallino rosso'},targets:[100,200,300,400],def:400},
   ita:{id:'ita',name:'Italiana',full:'Italiana · 5 birilli',reg:'regolamento FIBIS',col:{w:'#f3ecdc',y:'#dfae3a',r:'#b3262a'},pr:RB,
     bn:{w:'bianca',y:'gialla',r:'pallino rosso'},targets:[40,60,80,100],def:60}
@@ -460,7 +460,7 @@ function pinCount(list,g){
   let pts=0;const parts=[];
   if(g==='gor'){
     if(ext){pts+=ext*2;parts.push(plural(ext,'esterno da 2','esterni da 2'));}
-    if(int){pts+=int*8;parts.push(plural(int,'mediano da 8','mediani da 8'));}
+    if(int){pts+=int*8;parts.push(plural(int,'interno da 8','interni da 8'));}
     if(red){const v=(ext+int)?10:30;pts+=v;parts.push('rosso '+v+((ext+int)?'':' da solo'));}
   }else{
     if(ext){pts+=ext*2;parts.push(plural(ext,'birillo bianco da 2','birilli bianchi da 2'));}
@@ -468,31 +468,25 @@ function pinCount(list,g){
   }
   return{pts,parts};
 }
-/* Goriziana: regolamento ENDAS 2023/24 (art. 7, 9, 10, 12). Italiana: regolamento FIBIS 5 birilli (art. 8, 18, 24). */
+/* Goriziana e Italiana: regolamento FIBIS per la stecca. */
 function evaluate(e,g){
   g=g||gid();
   const pc=pinCount(e.pins,g);
   if(g==='gor'){
-    const calcio=e.railsBefore.includes('short'),mult=calcio?2:1;
-    let pts=pc.pts*mult;const parts=pc.parts.slice();
-    let pal=0;if(e.palFirstLegit){pal=calcio?6:3;pts+=pal;parts.push('pallino '+pal);}
-    if(calcio&&pc.pts)parts.push('birilli doppi di calcio');
+    /* FIBIS, stecca: art. 24 (falli), 29 (tiro indiretto), 30 (birilli), 31 (pallino) */
+    const ind=e.railsBefore.length>0,mult=ind?2:1;
     let f=null;
-    if(!e.first)f={code:'miss',pen:6,text:'Fallo: biglia bersaglio mancata'};
-    else if(e.first==='r'){f={code:'pal',pen:6,text:'Fallo di pallino'};const v=calcio?6:3;pts+=v;parts.push('pallino colpito per primo '+v);}
-    else if(e.pinsBeforeFirst)f={code:'pins',pen:2,text:'Fallo: birilli abbattuti direttamente con la tua biglia'};
-    else if(!e.crossed.w&&!e.crossed.y&&!e.palTouched&&!e.castleStop)f={code:'mezz',pen:6,text:'Fallo: nessuna biglia ha superato la mezzeria'};
-    if(f)return{to:'opp',pts:pts+f.pen,parts:['penalità '+f.pen].concat(parts),text:f.text,foul:f.code,pen:f.pen,offer:true};
-    const neg=e.pins.filter(p=>p.cls!=='ok');
-    if(neg.length){
-      let text='Punti negativi: la tua biglia ha abbattuto birilli';
-      if(!neg.some(p=>p.cls==='own')){
-        if(neg.some(p=>p.cls==='falsofisso'))text='Tiro di falso fisso: il pallino è entrato nel castello senza toccare sponde';
-        else text=e.railsBefore.includes('long')?'Tiro di traversino: la bersaglio è andata sui birilli senza sponda':'Tiro di fisso: la bersaglio è andata sui birilli senza toccare sponde';
-      }
-      return{to:'opp',pts,parts,text,foul:'neg',pen:0};
-    }
-    const kind=calcio?'Tiro indiretto di calcio':(e.railsBefore.length?'Sponda e biglia':'Tiro diretto');
+    if(!e.first)f={code:'miss',pen:2,text:'Fallo: bilia avversaria mancata'};
+    else if(e.first==='r')f={code:'pal',pen:4,text:'Fallo: prima il pallino'};
+    else if(e.pinsBeforeFirst)f={code:'pins',pen:2,text:'Fallo: birilli abbattuti prima della bilia avversaria'};
+    let pts=pc.pts*mult;const parts=pc.parts.slice();
+    if(f){if(ind&&pc.pts)parts.push('birilli doppi di sponda');
+      if(e.palTouched&&f.code!=='pal'){pts+=2;parts.push('pallino 2');}
+      return{to:'opp',pts:pts+f.pen,parts:['penalità '+f.pen].concat(parts),text:f.text,foul:f.code,pen:f.pen,inHand:true,offer:true};}
+    if(e.palFirstLegit){const v=6*mult;pts+=v;parts.push('pallino '+v);}
+    if(ind&&(pc.pts||e.palFirstLegit))parts.push('doppio: tiro indiretto');
+    if(e.pins.some(p=>p.cls==='own'))return{to:'opp',pts,parts,text:'Punti all\'avversario: la tua bilia ha abbattuto birilli',foul:'neg',pen:0};
+    const kind=ind?'Tiro indiretto':'Tiro diretto';
     return{to:'me',pts,parts,text:pts?kind+': '+parts.join(', '):'Tiro valido, nessun punto',kind};
   }
   /* italiana */
@@ -565,12 +559,10 @@ function settle(){
     popup(CHARS.vecio.img,'Cin cin!',nm(t)+' beve: +'+r.pts+' a '+nm(o),r.parts,true);}
   match.turn=o;match.offer=null;
   const mk={me:o?'y':'w',op:t?'y':'w'};
-  if(g==='gor'){inHand=mk;placeInHand();if(r.offer)match.offer='centrale';}
-  else if(r.inHand){inHand=mk;placeInHand();match.offer='bollino';}
+  if(r.inHand){inHand=mk;placeInHand();match.offer='bollino';}
   else inHand=null;
   if(!P[o].cpu){
-    if(g==='gor')msg($('msg').innerHTML+' '+nm(o)+': metti la tua biglia nella metà illuminata, opposta alla bersaglio.');
-    else if(inHand)msg($('msg').innerHTML+' '+nm(o)+' ha la bilia libera: mettila nella metà illuminata.');
+    if(inHand)msg($('msg').innerHTML+' '+nm(o)+' ha la bilia libera: mettila nella metà illuminata.');
   }
   updateScore();showOffer();
   const win=match.score.findIndex(s=>s>=match.target);
@@ -689,7 +681,7 @@ const diaTxt=(rl,P)=>{const d=rl.read(P);return 'diamante '+fmt(d)+' ('+Math.rou
 function plans(sh,W){
   const g=gid(),op=sh==='w'?'y':'w',O=S.balls[op];W=W||S.balls[sh];
   const tpaths=[];
-  if(g==='ita'){const u=unit(C0.x-O.x,C0.y-O.y);if(!blocked(O,C0,[op,sh],O.r,true))tpaths.push({via:null,u,dist:Math.hypot(C0.x-O.x,C0.y-O.y)});}
+  {const u=unit(C0.x-O.x,C0.y-O.y);if(!blocked(O,C0,[op,sh],O.r,true))tpaths.push({via:null,u,dist:Math.hypot(C0.x-O.x,C0.y-O.y)});}
   for(const rl of RAILS){const A=mirror(C0,rl),P2=railHit(O,A,rl);if(!P2)continue;
     if(blocked(O,P2,[op,sh],O.r,false)||blocked(P2,C0,[op,sh],O.r,true))continue;
     tpaths.push({via:rl,P2,u:unit(A.x-O.x,A.y-O.y),dist:Math.hypot(P2.x-O.x,P2.y-O.y)+Math.hypot(C0.x-P2.x,C0.y-P2.y)});}
@@ -728,9 +720,9 @@ function refine(o){/* aggiusta mira e forza con la stessa fisica del gioco, senz
 
 /* ===== consigli: due colpi + testi dai manuali ===== */
 const MANUAL={
-  dirGor:'<b>Regolamento ENDAS, art. 7:</b> nel tiro diretto la bersaglio, dopo essere stata colpita, deve toccare una o più sponde prima di abbattere i birilli. Se va dritta sul castello è un <i>tiro di fisso</i> e i punti vanno all\'avversario. <b>Margutti, lezione 1:</b> la traiettoria si cerca fuori dal biliardo, nel punto speculare del castello oltre la sponda: si mira quel punto come in uno specchio.',
+  dirGor:'<b>Regolamento FIBIS, art. 30 e 31:</b> birilli esterni 2, interni 8, rosso 10 con altri o 30 da solo, anche a castello incompleto; il pallino vale sempre 6, che lo tocchi la bilia avversaria o la tua dopo averla colpita. <b>Margutti, lezione 1:</b> per mandare la bersaglio sul castello passando da una sponda si mira il punto speculare del castello oltre la sponda: le traiettorie si cercano fuori dal biliardo.',
   dirIta:'<b>Regolamento FIBIS, art. 8:</b> birilli bianchi 2 punti, rosso 4 con altri o 10 da solo; pallino 4 se lo prende la tua bilia dopo l\'avversaria, 3 se lo prende l\'avversaria. <b>Margutti, lezione 5:</b> se colpisci in pienezza, con il colpo frenato la battente dopo l\'urto tende ad arrestarsi; con effetto in testa segue la bersaglio.',
-  calcio:'<b>ENDAS, art. 7 e 9:</b> è <i>tiro indiretto</i> quando la battente tocca almeno una volta la sponda corta prima della bersaglio: birilli doppi e pallino 6 invece di 3. <b>Margutti, lezione 2:</b> la sponda non è uno specchio perfetto; dopo l\'urto la biglia plana e slitta (scivolamento), più sul biliardo nuovo che sul battuto, quindi la mira geometrica va corretta con prova o con un filo d\'effetto a favore.',
+  calcio:'<b>FIBIS, art. 29:</b> il tiro è <i>indiretto</i> quando la tua bilia tocca almeno una sponda prima dell\'avversaria: birilli e pallino raddoppiano (il rosso da solo vale 60, il pallino 12); la penalità dei falli invece resta 2. <b>Margutti, lezione 2:</b> la sponda non è uno specchio perfetto; dopo l\'urto la biglia plana e slitta (scivolamento), più sul biliardo nuovo che sul battuto, quindi la mira geometrica va corretta con prova o con un filo d\'effetto a favore.',
   spondaBiglia:'<b>ENDAS, art. 7:</b> se la battente tocca prima la sponda lunga si chiama <i>sponda e biglia</i> e conta come tiro diretto, quindi i birilli non raddoppiano. Attenzione al <i>traversino</i>: se dopo la sponda laterale la bersaglio va dritta sui birilli, i punti vanno all\'avversario. <b>Margutti, lezione 3:</b> conviene prendere i riferimenti sulla linea dei diamanti, che anticipa un poco l\'impatto e recupera parte dello scivolamento.',
   dueSponde:'<b>Bibbia del biliardo, due sponde a scendere:</b> dal punto fisso 10 della corta si traguarda la bersaglio nel punto da colpire e si trova l\'uscita in corta; poi si traguarda quell\'uscita con il centro della battente e si aggiunge lo scarto letto sulla sponda di partenza. Il risultato è il punto di battuta per un tiro di misura; un punto in meno per un tiro a scendere, due per un tiro al volo. <b>Margutti, lezione 9:</b> più sponde si leggono come un biliardo virtuale ruotato o scalato.',
   railIta:'<b>Margutti, lezione 1, teoria del triangolo isoscele:</b> l\'angolo d\'uscita dalla sponda è uguale a quello d\'entrata; per raggiungere un punto si mira a metà della base tra partenza e arrivo, cioè al punto speculare oltre la sponda. <b>Bibbia del biliardo:</b> se le sponde "mollano", accompagna il tiro con una carezza di effetto a favore.'
@@ -739,7 +731,7 @@ function advice(){
   const sh=me(),op=opp(),g=gid(),W=S.balls[sh],O=S.balls[op],oN=BN(op);
   const all=plans(sh);
   const hasShort=o=>o.rl&&(o.rl.type==='short'||(o.rl2&&o.rl2.type==='short'));
-  const score=o=>o.cut+o.travel/80+(o.tp.via?6:0)+(o.kind==='rail2'?10:0)+(g==='gor'&&o.kind!=='dir'&&hasShort(o)?-15:0);
+  const score=o=>o.cut+o.travel/80+(o.tp.via?6:0)+(o.kind==='rail2'?10:0)+(g==='gor'&&o.kind!=='dir'?-15:0);
   const dirs=all.filter(o=>o.kind==='dir').sort((a,b)=>score(a)-score(b));
   const rails=all.filter(o=>o.kind!=='dir').sort((a,b)=>score(a)-score(b));
   const cards=[];
@@ -747,8 +739,8 @@ function advice(){
     const best=refine(o);const P=best?best.P:{angle:o.ang,power:o.pow};
     let type,how=[];
     if(o.kind==='dir')type=g==='gor'?'Tiro diretto':'Colpo diretto';
-    else if(o.kind==='rail')type=g==='gor'?(o.rl.type==='short'?'Tiro indiretto di calcio · punti doppi':'Sponda e biglia · conta come diretto'):'Tiro di sponda';
-    else type=g==='gor'?(hasShort(o)?'Calcio a due sponde · punti doppi':'Due sponde lunghe · conta come diretto'):'Due sponde';
+    else if(o.kind==='rail')type=g==='gor'?'Tiro indiretto · punti doppi':'Tiro di sponda';
+    else type=g==='gor'?'Indiretto a due sponde · punti doppi':'Due sponde';
     if(o.kind!=='dir')how.push('Mira la '+o.rl.name+' al '+diaTxt(o.rl,o.P)+'.');
     if(o.kind==='rail2')how.push('La tua biglia prende poi la '+o.rl2.name+' al '+diaTxt(o.rl2,o.Q)+'.');
     how.push('Prendi la '+oN+' con un taglio di circa '+Math.round(o.cut)+'° '+(o.cut<12?'(quasi pieno)':o.cut<35?'(mezza biglia abbondante)':'(fine)')+'.');
@@ -758,18 +750,17 @@ function advice(){
     if(best&&best.r.to==='me'&&best.r.pts)res='In simulazione: <b>+'+best.r.pts+'</b> ('+best.r.parts.join(', ')+').';
     else if(best&&best.r.to==='opp')res='In simulazione questo tiro fa bere: '+best.r.text.toLowerCase()+'. Provalo per capire il rischio.';
     else res='In simulazione il tiro tocca la '+oN+' ma non fa punti: aggiusta forza o taglio.';
-    const man=o.kind==='dir'?(g==='gor'?MANUAL.dirGor:MANUAL.dirIta):(g==='gor'?(hasShort(o)?MANUAL.calcio:MANUAL.spondaBiglia):(o.kind==='rail2'?MANUAL.dueSponde:MANUAL.railIta));
+    const man=o.kind==='dir'?(g==='gor'?MANUAL.dirGor:MANUAL.dirIta):(g==='gor'?MANUAL.calcio:(o.kind==='rail2'?MANUAL.dueSponde:MANUAL.railIta));
     return{h:label,type,how:how.join(' '),res,man,ang:P.angle,pow:P.power,fig:shotSVG(o,simulate({shooter:me(),angle:P.angle,power:P.power,sx:0,sy:0},null,true))};
   };
   if(dirs.length)cards.push(describe(dirs[0],'1 · Diretto'));
-  else cards.push({h:'1 · Diretto',type:'Non disponibile',how:g==='gor'?'Da qui non c\'è un colpo diretto che mandi la '+oN+' sul castello passando da una sponda senza toccare birilli o pallino con la tua biglia.':'La linea diretta è chiusa da birilli o pallino, oppure il taglio sarebbe troppo fino.',man:g==='gor'?MANUAL.dirGor:MANUAL.dirIta});
+  else cards.push({h:'1 · Diretto',type:'Non disponibile',how:'La linea diretta è chiusa da birilli o pallino, oppure il taglio sarebbe troppo fino.',man:g==='gor'?MANUAL.dirGor:MANUAL.dirIta});
   const railPick=rails[0];
   if(railPick)cards.push(describe(railPick,'2 · Di sponda'));
   else cards.push({h:'2 · Di sponda',type:'Non disponibile',how:'Né una né due sponde portano la battente sulla '+oN+' con un taglio giocabile. Prova a cambiare posizione o a giocare di difesa, toccando la '+oN+' piano.',man:g==='gor'?MANUAL.calcio:MANUAL.railIta});
   const warns=[];
   const pal=S.balls.r;
-  if(segDist(pal,W,O)<W.r+pal.r+14)warns.push(g==='gor'?'Il pallino è vicino alla linea della battente: se lo tocchi per primo è fallo di pallino, 6 punti più il pallino all\'avversario.':'Il pallino è vicino alla linea di tiro: prenderlo per primo costa 4 punti di penalità.');
-  if(g==='gor')warns.push('Ricorda la mezzeria (art. 8 e 12): dopo il tiro almeno una delle due biglie deve averla superata, salvo che una tocchi il pallino o si fermi sul castello abbattendo birilli.');
+  if(segDist(pal,W,O)<W.r+pal.r+14)warns.push('Il pallino è vicino alla linea di tiro: se lo prendi per primo è fallo, 4 punti di penalità più i punti del tiro all\'avversario.');
   return{cards,warns};
 }
 /* schema del tiro consigliato: percorsi simulati, punti di sponda e diamanti */
@@ -1042,15 +1033,15 @@ $('vPlan').onclick=()=>setView('plan');$('vPlayer').onclick=()=>setView('3d');
 
 /* ===== regole in breve (riusate in pagina e nella scuola) ===== */
 const RULES={
-  gor:'<h4>Goriziana · 9 birilli <small>regolamento ENDAS 2023/24</small></h4><ul>'+
-    '<li>Biglie da 61 mm, pallino da 59 mm. Il regolamento ENDAS usa bianca, rossa e pallino blu; qui, come nell\'italiana, sono bianca, gialla e pallino rosso. Si gioca sempre con la stessa biglia.</li>'+
-    '<li>Apertura: bersaglio nella penitenza alta, pallino nella penitenza centrale del quadrato superiore. A ogni turno chi tira riprende la propria biglia e tira dal quadrato opposto a quello della bersaglio.</li>'+
-    '<li>Birilli: esterni 2, mediani 8, rosso 10 con altri o 30 da solo. Pallino toccato 3 punti.</li>'+
-    '<li>Tiro indiretto (di calcio): la battente tocca la sponda corta prima della bersaglio, birilli doppi e pallino 6. La sponda lunga prima (sponda e biglia) conta come diretto.</li>'+
-    '<li>La bersaglio deve toccare una sponda prima dei birilli: se ci va dritta è tiro di fisso (o traversino, dopo la sponda laterale) e i punti vanno all\'avversario. Lo stesso se spinge il pallino dritto nel castello (falso fisso).</li>'+
-    '<li>Birilli abbattuti dalla battente: punti all\'avversario. Se succede prima di toccare la bersaglio è anche fallo da 2.</li>'+
-    '<li>Falli da 6 più i punti del tiro: bersaglio mancata, pallino colpito per primo (+3, o +6 di calcio), nessuna biglia oltre la mezzeria. L\'avversario può mettere la bersaglio nella penitenza centrale del quadrante opposto al pallino.</li>'+
-    '<li>Se un tiro fa punti positivi e negativi insieme, il totale va all\'avversario. Si gioca ai 400.</li></ul>',
+  gor:'<h4>Goriziana · 9 birilli <small>regolamento FIBIS, stecca</small></h4><ul>'+
+    '<li>Tre bilie da 61 mm: bianca, gialla e pallino rosso. Nove birilli in croce con interasse di 66 mm.</li>'+
+    '<li>Apertura: gialla sul bollino a 10 cm dalla sponda corta del quadrato superiore, pallino al centro dello stesso quadrato; la bianca apre dal quadrato inferiore.</li>'+
+    '<li>Birilli: esterni 2, interni 8, rosso 10 con altri o 30 da solo, anche a castello incompleto (art. 30).</li>'+
+    '<li>Pallino: sempre 6 punti, toccato dalla bilia avversaria o dalla tua dopo averla colpita (art. 31).</li>'+
+    '<li>Tiro indiretto: se la tua bilia tocca almeno una sponda prima dell\'avversaria, birilli e pallino raddoppiano (art. 29).</li>'+
+    '<li>Falli (art. 24): bilia avversaria mancata 2, pallino colpito per primo 4, birilli abbattuti prima dell\'avversaria 2. All\'avversario vanno penalità e punti del tiro, con bilia libera. La penalità non raddoppia mai.</li>'+
+    '<li>Se la tua bilia abbatte birilli dopo aver colpito l\'avversaria, i punti vanno all\'avversario ma senza bilia libera. Se un tiro fa punti positivi e negativi insieme, va tutto all\'avversario.</li>'+
+    '<li>Bilia libera: si piazza nel quadrato opposto alla bilia del fallo; chi batte può far mettere l\'avversaria sul bollino di partenza.</li></ul>',
   ita:'<h4>Italiana · 5 birilli <small>regolamento FIBIS, stecca</small></h4><ul>'+
     '<li>Tre bilie da 61 mm: bianca, gialla e il pallino rosso. Birilli a croce con interasse di 66 mm.</li>'+
     '<li>Apertura: gialla sul bollino a 10 cm dalla sponda corta del quadrato superiore, pallino al centro dello stesso quadrato; la bianca apre dal quadrato inferiore.</li>'+
@@ -1155,13 +1146,13 @@ function schoolCards(){
     p:'Si traguarda il birillo rosso con il centro della bilia avversaria e si prolunga la retta fino alla sponda corta: è il punto di battuta in corta (es. 12). Memorizzando le battute di partenza e di prima sponda, con una moltiplicazione si trova il punto di mira: il diamante «3» di prima sponda, perché 4 × 3 = 12. Attenzione: il conteggio ha un errore sul diamante 1, dove 4 × 1 vale 5 e 5 × 1 vale 7. Effetto variabile, sbracciata affondata morbida.'});}
   /* 12 misure */
   cards.push({t:'Misure regolamentari usate nel gioco',src:'FIBIS art. 2 e 3 · ENDAS art. 3',svg:'',
-    p:'<span class="meas"><b>Piano</b> 2840 × 1420 mm · <b>Diamanti</b> ogni 355 mm · <b>Sponde</b> larghe 12,5–15 cm, becco a 37 mm · <b>Biglie</b> 61 mm · <b>Pallino</b> 61 mm nell\'italiana, 59 mm nella goriziana · <b>Birilli</b> alti 25 mm, base 10 mm, testa 6–7 mm, interasse 66 mm · <b>Bollini</b> a 10 cm dalla sponda corta.</span> Nella pianta i birilli sono disegnati un poco più grandi del vero per vederli sul telefono; nella fisica e nella vista giocatore hanno la misura reale.'});
+    p:'<span class="meas"><b>Piano</b> 2840 × 1420 mm · <b>Diamanti</b> ogni 355 mm · <b>Sponde</b> larghe 12,5–15 cm, becco a 37 mm · <b>Biglie</b> 61 mm · <b>Pallino</b> 61 mm (59 mm nella goriziana ENDAS, giocata a mano) · <b>Birilli</b> alti 25 mm, base 10 mm, testa 6–7 mm, interasse 66 mm · <b>Bollini</b> a 10 cm dalla sponda corta.</span> Nella pianta i birilli sono disegnati un poco più grandi del vero per vederli sul telefono; nella fisica e nella vista giocatore hanno la misura reale.'});
   return cards;
 }
 function renderSchool(){
   const el=$('schoolCards');if(el.dataset.done)return;el.dataset.done='1';
   el.innerHTML=schoolCards().map(c=>'<article class="card"><h3>'+c.t+'</h3><div class="srcl">'+c.src+'</div>'+(c.svg?'<div class="fig">'+c.svg+'</div>':'')+'<p>'+c.p+'</p></article>').join('')+
-    '<article class="card wide"><h3>Le regole a confronto</h3><div class="rules2"><div>'+RULES.gor+'</div><div>'+RULES.ita+'</div></div><p class="small">Nel regolamento ENDAS la goriziana si gioca lanciando la biglia con la mano. Qui si usa la stecca per entrambe le specialità, con i punteggi del rispettivo regolamento.</p></article>';
+    '<article class="card wide"><h3>Le regole a confronto</h3><div class="rules2"><div>'+RULES.gor+'</div><div>'+RULES.ita+'</div></div><p class="small">Entrambe le specialità seguono il regolamento FIBIS per la stecca. Nella goriziana del regolamento ENDAS, giocata a mano, alcuni valori cambiano: pallino 3 o 6, falli da 6, regola della mezzeria e tiro di fisso.</p></article>';
 }
 
 /* ===== selfie → giocatore pixel ===== */
