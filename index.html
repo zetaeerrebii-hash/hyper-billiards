@@ -474,7 +474,8 @@ function evaluate(e,g){
   const pc=pinCount(e.pins,g);
   if(g==='gor'){
     /* FIBIS, stecca: art. 24 (falli), 29 (tiro indiretto), 30 (birilli), 31 (pallino) */
-    const ind=e.railsBefore.length>0,mult=ind?2:1;
+    /* indiretto solo se la tua bilia tocca una sponda e POI colpisce l'avversaria, senza aver prima abbattuto birilli */
+    const ind=e.first===e.opp&&e.railsBefore.length>0&&!e.pinsBeforeFirst,mult=ind?2:1;
     let f=null;
     if(!e.first)f={code:'miss',pen:2,text:'Fallo: bilia avversaria mancata'};
     else if(e.first==='r')f={code:'pal',pen:4,text:'Fallo: prima il pallino'};
