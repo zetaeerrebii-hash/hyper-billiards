@@ -469,6 +469,17 @@ function pinCount(list,g){
   return{pts,parts};
 }
 /* Goriziana e Italiana: regolamento FIBIS per la stecca. */
+/* punti negativi: si spiega chi ha abbattuto cosa, perché il totale del tiro va tutto all'avversario */
+function pinNames(list,g){const ext=list.filter(p=>p.t==='ext').length,int=list.filter(p=>p.t==='int').length,red=list.some(p=>p.t==='red'),o=[];
+  if(ext)o.push(plural(ext,g==='gor'?'esterno':'bianco',g==='gor'?'esterni':'bianchi'));if(int)o.push(plural(int,'interno','interni'));if(red)o.push('il rosso');return o.join(', ');}
+function negResult(e,g,pts,parts){
+  const mine=e.pins.filter(p=>p.by===e.shooter),other=e.pins.filter(p=>p.by!==e.shooter);
+  const det=['con la tua bilia: '+pinNames(mine,g)];
+  if(other.length)det.push('con le altre bilie: '+pinNames(other,g));
+  det.push('valore: '+parts.join(', '));
+  const text=other.length?'Punti all\'avversario: la tua bilia ha abbattuto birilli, e quando un tiro fa punti buoni e cattivi insieme il totale va all\'avversario':'Punti all\'avversario: la tua bilia ha abbattuto birilli';
+  return{to:'opp',pts,parts:det,text,foul:'neg',pen:0};
+}
 function evaluate(e,g){
   g=g||gid();
   const pc=pinCount(e.pins,g);
@@ -486,7 +497,7 @@ function evaluate(e,g){
       return{to:'opp',pts:pts+f.pen,parts:['penalità '+f.pen].concat(parts),text:f.text,foul:f.code,pen:f.pen,inHand:true,offer:true};}
     if(e.palFirstLegit){const v=6*mult;pts+=v;parts.push('pallino '+v);}
     if(ind&&(pc.pts||e.palFirstLegit))parts.push('doppio: tiro indiretto');
-    if(e.pins.some(p=>p.cls==='own'))return{to:'opp',pts,parts,text:'Punti all\'avversario: la tua bilia ha abbattuto birilli',foul:'neg',pen:0};
+    if(e.pins.some(p=>p.cls==='own'))return negResult(e,g,pts,parts);
     const kind=ind?'Tiro indiretto':'Tiro diretto';
     return{to:'me',pts,parts,text:pts?kind+': '+parts.join(', '):'Tiro valido, nessun punto',kind};
   }
@@ -499,7 +510,7 @@ function evaluate(e,g){
     return{to:'opp',pts,parts,text:f.text,foul:f.code,pen:f.pen,inHand:true,offer:true};}
   let pts=pc.pts;const parts=pc.parts.slice();
   if(e.palFirstLegit){const v=e.palFirstLegit===e.shooter?4:3;pts+=v;parts.push('pallino '+v);}
-  if(e.pins.some(p=>p.cls==='own'))return{to:'opp',pts,parts,text:'Punti all\'avversario: la tua bilia ha abbattuto birilli',foul:'neg',pen:0};
+  if(e.pins.some(p=>p.cls==='own'))return negResult(e,g,pts,parts);
   const kind=e.railsBefore.length?'Tiro di sponda':'Tiro diretto';
   return{to:'me',pts,parts,text:pts?kind+': '+parts.join(', '):'Tiro valido, nessun punto',kind};
 }
