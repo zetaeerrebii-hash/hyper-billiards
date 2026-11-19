@@ -769,8 +769,8 @@ function shotSVG(o,Q){
   const m=58,W=PW+2*m,H=PH+2*m,X=x=>(x+m).toFixed(1),Y=y=>(y+m).toFixed(1),sh=me(),op=opp();
   let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Schema del tiro consigliato">';
   s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="14" fill="#7f1b1e"/><rect x="'+(m-8)+'" y="'+(m-8)+'" width="'+(PW+16)+'" height="'+(PH+16)+'" fill="#2f8a6b"/><rect x="'+m+'" y="'+m+'" width="'+PW+'" height="'+PH+'" fill="#2e7a62"/>';
-  for(let i=0;i<=8;i++){s+='<circle cx="'+X(i*DIA)+'" cy="'+(m/2-4)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+X(i*DIA)+'" cy="'+(H-m/2+4)+'" r="3.5" fill="#e6d3a3"/>';}
-  for(let j=0;j<=4;j++){s+='<circle cx="'+(m/2-4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/><circle cx="'+(W-m/2+4)+'" cy="'+Y(j*DIA)+'" r="3.5" fill="#e6d3a3"/>';}
+  for(let i=0;i<=8;i++){s+=svgDm(+X(i*DIA),m/2-4,true,9,4,'#f4eedf')+svgDm(+X(i*DIA),H-m/2+4,true,9,4,'#f4eedf');}
+  for(let j=0;j<=4;j++){s+=svgDm(m/2-4,+Y(j*DIA),false,9,4,'#f4eedf')+svgDm(W-m/2+4,+Y(j*DIA),false,9,4,'#f4eedf');}
   for(const p of S.pins)s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="4" fill="'+(p.t==='red'?'#c23a2c':'#f3ecdc')+'"/>';
   const path=(pts,c,dash,w)=>pts.length>1?'<polyline points="'+pts.map(q=>X(q[0])+','+Y(q[1])).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+dash+'" stroke-linejoin="round" stroke-linecap="round"/>':'';
   for(const k of KEYS)if(k!==sh&&Q.moved[k])s+=path(Q.paths[k],COL(k),'14 8',5);
@@ -808,7 +808,9 @@ function scheduleTips(){if(mode!=='train'||busy())return;clearTimeout(tipTimer);
 
 /* ===== disegno in pianta ===== */
 function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
-function dm(x,y){const h=y<RW||y>RW+PH;cx.beginPath();if(h){cx.moveTo(x-5,y);cx.lineTo(x,y-2.6);cx.lineTo(x+5,y);cx.lineTo(x,y+2.6);}else{cx.moveTo(x,y-5);cx.lineTo(x+2.6,y);cx.lineTo(x,y+5);cx.lineTo(x-2.6,y);}cx.closePath();cx.fill();}
+/* diamante a rombo con il lato lungo rivolto verso il tavolo, come sui biliardi veri */
+function dm(x,y){const longRail=y<RW||y>RW+PH;cx.beginPath();if(longRail){cx.moveTo(x,y-5.5);cx.lineTo(x+2.4,y);cx.lineTo(x,y+5.5);cx.lineTo(x-2.4,y);}else{cx.moveTo(x-5.5,y);cx.lineTo(x,y-2.4);cx.lineTo(x+5.5,y);cx.lineTo(x,y+2.4);}cx.closePath();cx.fill();}
+const svgDm=(x,y,longRail,a,b,c)=>'<polygon points="'+(longRail?[[x,y-a],[x+b,y],[x,y+a],[x-b,y]]:[[x-a,y],[x,y-b],[x+a,y],[x,y+b]]).map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'" fill="'+c+'"/>';
 function drawTable(){
   const W=cv.width,H=cv.height,c0=RW-CUSH;cx.clearRect(0,0,W,H);
   /* legno di mogano con giunti a 45° agli angoli */
@@ -928,9 +930,9 @@ function init3D(){
     box(PW+2*CU,CH,CU,cush,0,CH/2,s*(PH/2+CU/2));box(CU,CH,PH,cush,s*(PW/2+CU/2),CH/2,0);
     box(PW+2*CU+2*FW,FH,FW,wood,0,TOP-FH/2,s*(PH/2+CU+FW/2));box(FW,FH,PH+2*CU,wood,s*(PW/2+CU+FW/2),TOP-FH/2,0);
   }
-  const dg=new T.CylinderGeometry(3.6,3.6,1,4);
-  for(let i=0;i<=8;i++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(-PW/2+i*DIA,TOP+0.5,s*(PH/2+CU+FW/2));sc.add(d);}
-  for(let j=0;j<=4;j++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(s*(PW/2+CU+FW/2),TOP+0.5,-PH/2+j*DIA);sc.add(d);}
+  const dg=new T.CylinderGeometry(5.5,5.5,1,4);
+  for(let i=0;i<=8;i++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(-PW/2+i*DIA,TOP+0.5,s*(PH/2+CU+FW/2));d.scale.set(0.45,1,1);sc.add(d);}
+  for(let j=0;j<=4;j++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(s*(PW/2+CU+FW/2),TOP+0.5,-PH/2+j*DIA);d.scale.set(1,1,0.45);sc.add(d);}
   box(PW+2*CU+2*FW,110,PH+2*CU+2*FW,woodDk,0,TOP-FH-55,0);
   for(const a of[-1,1])for(const b of[-1,1])box(70,330,70,woodDk,a*(PW/2+CU+FW-40),TOP-FH-110-165,b*(PH/2+CU+FW-40));
   const floor=new T.Mesh(new T.PlaneGeometry(8000,8000),std(0x24150e,.9));floor.rotation.x=-Math.PI/2;floor.position.y=TOP-FH-440;floor.receiveShadow=true;sc.add(floor);
@@ -1064,8 +1066,8 @@ function renderRules(){$('rulesNow').innerHTML=RULES[gid()];$('rulesSum').textCo
 /* ===== scuola: schemi dai manuali ===== */
 function tbl(ox,oy,s,inner,o){o=o||{};
   const w=8*s,h=4*s;let svg='<rect x="'+(ox-9)+'" y="'+(oy-9)+'" width="'+(w+18)+'" height="'+(h+18)+'" rx="6" fill="#7f1b1e"/><rect x="'+ox+'" y="'+oy+'" width="'+w+'" height="'+h+'" fill="#2e7a62"/>';
-  for(let i=0;i<=8;i++)svg+='<circle cx="'+(ox+i*s)+'" cy="'+(oy-4.5)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+i*s)+'" cy="'+(oy+h+4.5)+'" r="1.4" fill="#e6d3a3"/>';
-  for(let j=0;j<=4;j++)svg+='<circle cx="'+(ox-4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/><circle cx="'+(ox+w+4.5)+'" cy="'+(oy+j*s)+'" r="1.4" fill="#e6d3a3"/>';
+  for(let i=0;i<=8;i++)svg+=svgDm(ox+i*s,oy-4.5,true,2.6,1.1,'#f4eedf')+svgDm(ox+i*s,oy+h+4.5,true,2.6,1.1,'#f4eedf');
+  for(let j=0;j<=4;j++)svg+=svgDm(ox-4.5,oy+j*s,false,2.6,1.1,'#f4eedf')+svgDm(ox+w+4.5,oy+j*s,false,2.6,1.1,'#f4eedf');
   if(o.castle){const c=[ox+4*s,oy+2*s],d=s*0.19;svg+='<g fill="#f3ecdc">';for(const [a,b] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]].slice(0,o.castle))svg+='<circle cx="'+(c[0]+a*d)+'" cy="'+(c[1]+b*d)+'" r="1.6" '+(a||b?'':'fill="#c23a2c"')+'/>';svg+='</g>';}
   return svg+inner;
 }
