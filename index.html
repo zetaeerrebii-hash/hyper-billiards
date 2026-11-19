@@ -926,12 +926,13 @@ function init3D(){
   sc.add(new T.HemisphereLight(0xfff0dc,0x2a170e,0.55));
   const lin=c=>new T.Color(c).convertSRGBToLinear();
   const std=(c,ro,me)=>new T.MeshStandardMaterial({color:lin(c),roughness:ro==null?.8:ro,metalness:me||0});
+  const lamps=[];
   for(const x of[-260,260]){
     const L=new T.SpotLight(0xffe2b0,1.1,0,0.95,0.55,1);L.position.set(x,600,0);L.target.position.set(x*0.5,0,0);
     L.castShadow=true;L.shadow.mapSize.set(1024,1024);L.shadow.bias=-0.0006;sc.add(L);sc.add(L.target);
-    const shade=new T.Mesh(new T.ConeGeometry(110,70,32,1,true),new T.MeshStandardMaterial({color:lin(0x1f4a33),side:T.DoubleSide,roughness:.55,metalness:.25}));shade.position.set(x,620,0);sc.add(shade);
-    const bulb=new T.Mesh(new T.SphereGeometry(18,16,12),new T.MeshBasicMaterial({color:0xfff2cc}));bulb.position.set(x,595,0);sc.add(bulb);
-    const rod=new T.Mesh(new T.CylinderGeometry(2,2,600,8),std(0xc9a25a,.3,.8));rod.position.set(x,955,0);sc.add(rod);
+    const shade=new T.Mesh(new T.ConeGeometry(110,70,32,1,true),new T.MeshStandardMaterial({color:lin(0x1f4a33),side:T.DoubleSide,roughness:.55,metalness:.25}));shade.position.set(x,620,0);sc.add(shade);lamps.push(shade);
+    const bulb=new T.Mesh(new T.SphereGeometry(18,16,12),new T.MeshBasicMaterial({color:0xfff2cc}));bulb.position.set(x,595,0);sc.add(bulb);lamps.push(bulb);
+    const rod=new T.Mesh(new T.CylinderGeometry(2,2,600,8),std(0xc9a25a,.3,.8));rod.position.set(x,955,0);sc.add(rod);lamps.push(rod);
   }
   const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;sc.add(o);return o;};
   const felt=new T.Mesh(new T.PlaneGeometry(PW+60,PH+60),std(0x1f5f4b,.95));felt.rotation.x=-Math.PI/2;felt.receiveShadow=true;sc.add(felt);
@@ -958,7 +959,7 @@ function init3D(){
     const g=new T.CylinderGeometry(r1,r0,len,20);g.rotateX(Math.PI/2);const m=new T.Mesh(g,std(c,ro,me));m.position.z=z+len/2;m.castShadow=true;cue.add(m);z+=len;}
   sc.add(cue);
   const hints=new T.Group();sc.add(hints);
-  Object.assign(V3,{ok:true,T,r,sc,cam,balls,pins,pmW,pmR,cue,hints,el,lin,pos:new T.Vector3(),look:new T.Vector3(),snap:true,hintKey:'',game:''});
+  Object.assign(V3,{ok:true,lamps,T,r,sc,cam,balls,pins,pmW,pmR,cue,hints,el,lin,pos:new T.Vector3(),look:new T.Vector3(),snap:true,hintKey:'',game:''});
   const rs=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();};
   rs();if(window.ResizeObserver)new ResizeObserver(rs).observe(el);else window.addEventListener('resize',rs);
   let drag=null;const pts=new Map();let pinch=null;
@@ -1016,6 +1017,7 @@ function render3D(){
   const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
   if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,k);V3.look.lerp(tl,k);}
   V3.cam.position.copy(V3.pos);V3.cam.lookAt(V3.look);
+  const showLamps=V3.pos.y<430;V3.lamps.forEach(m=>m.visible=showLamps);
   hints3D();
   V3.r.render(V3.sc,V3.cam);
 }
@@ -1028,18 +1030,30 @@ function fitPose(look,ux,uz,k,dmin){
     d+=35;}
   return{pos:c.position.clone(),look:look.clone()};
 }
+/* dove sta in piedi chi tira: dietro la biglia, appena fuori dal bordo del tavolo */
+function standSpot(b,dx,dy){
+  const ex=PW/2+RW+45,ez=PH/2+RW+45;let t=60;
+  for(;t<900;t+=10){const x=b.x-dx*t-PW/2,z=b.y-dy*t-PH/2;if(Math.abs(x)>ex||Math.abs(z)>ez)break;}
+  return{x:b.x-dx*Math.min(t,Math.max(120,t)),y:b.y-dy*Math.min(t,Math.max(120,t))};
+}
+/* sale in verticale finché vede tutto il tavolo, senza allontanarsi */
+function fitHeight(hx,hz,look,h0){
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const ex=PW/2+30,ez=PH/2+30,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let h=h0;
+  for(let i=0;i<80;i++){c.position.set(hx,h,hz);c.lookAt(look);c.updateMatrixWorld();
+    if(cs.every(([x,z])=>{v.set(x,0,z).project(c);return v.z<1&&Math.abs(v.x)<0.97&&Math.abs(v.y)<0.95;}))break;h+=25;}
+  return{pos:c.position.clone(),look:look.clone()};
+}
 function aimPose(b,dx,dy){
-  let t=(PW/2-b.x)*dx+(PH/2-b.y)*dy;t=Math.max(150,Math.min(650,t));
-  const far=fitPose(P3(b.x+dx*t,b.y+dy*t,0),dx,dy,0.3,t+220);
+  const st=standSpot(b,dx,dy),look=P3((b.x+dx*220+PW/2)/2,(b.y+dy*220+PH/2)/2,0);
+  const far=fitHeight(st.x-PW/2,st.y-PH/2,look,180);
   const near={pos:P3(b.x-dx*210,b.y-dy*210,60),look:P3(b.x+dx*300,b.y+dy*300,0)};
   const z=zoom3D;return{pos:far.pos.clone().lerp(near.pos,z),look:far.look.clone().lerp(near.look,z)};
 }
 let zoom3D=0.55;try{const zz=parseFloat(localStorage.getItem('mg-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
 function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';try{localStorage.setItem('mg-zoom',String(zoom3D));}catch(e){}}
 function standPose(b,dx,dy){
-  const sx0=b.x-dx*200,sy0=b.y-dy*200,cxp=PW/2-sx0,cyp=PH/2-sy0,L=Math.hypot(cxp,cyp);
-  const ux=L>60?cxp/L:dx,uz=L>60?cyp/L:dy;
-  return fitPose(new V3.T.Vector3(0,0,0),ux,uz,1.05,Math.max(L,300));
+  const st=standSpot(b,dx,dy);return fitHeight(st.x-PW/2,st.y-PH/2,new V3.T.Vector3(0,0,0),260);
 }
 function setView(v){
   if(v==='3d'&&!init3D()){msg('La vista giocatore non è disponibile su questo dispositivo.');v='plan';}
