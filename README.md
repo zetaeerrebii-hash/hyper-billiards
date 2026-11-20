@@ -1,6 +1,6 @@
 # HYPER BILLIARDS
 
-*Nome precedente: Maestria Goriziana.*
+*Nome precedente: Maestria Goriziana.* · Gruppo HYPER FALSE: `HF_APP_HYPER BILLIARDS` · Stato: [STATO.md](STATO.md)
 
 Gioco e strumento di apprendimento per il biliardo all'italiana con la stecca: **goriziana (9 birilli)** e **italiana (5 birilli)**, entrambe con il regolamento FIBIS. Una sola pagina web, senza server: si apre in qualsiasi browser, anche da telefono.
 
@@ -18,8 +18,12 @@ src/
   js/core.js       stato, misure reali, fisica, regolamenti, computer, consigli, disegno in pianta
   js/ui.js         vista 3D, scuola, selfie, schermate e modalità
   assets/          ritratti pixel di Pietro, Zibi e Il Vecio
-tools/build.py     assembla src/ in index.html (+ dist/artifact.html)
-tests/             test dei punteggi (node)
+vendor/three/      three.js r128 (MIT) servito dal sito; l'artefatto lo carica da cdnjs
+tools/build.py     assembla src/ in index.html (+ dist/artifact.html); --check per la CI
+tests/             test dei punteggi (node) e prova nel browser (Playwright)
+.github/workflows/ CI: build aggiornata, punteggi, prova nel browser
+HF_CORE.md         regole dello studio (copia datata dal centro HYPER FALSE)
+STATO.md           punto della situazione, si aggiorna a fine sessione
 docs/              documentazione per sviluppo e migrazione
 index.html         build pubblicata (GitHub Pages)
 ```
@@ -30,9 +34,11 @@ index.html         build pubblicata (GitHub Pages)
 python3 tools/build.py        # ricostruisce index.html e dist/artifact.html
 node tests/scoring.test.js    # verifica i punteggi di goriziana e italiana
 python3 -m http.server        # prova in locale su http://localhost:8000
+npm install && npx playwright install chromium   # solo la prima volta, per la prova nel browser
+npm run smoke                 # prova nel browser di index.html e dist/artifact.html
 ```
 
-Non ci sono dipendenze da installare. three.js r128 e i font (Cinzel, EB Garamond) si caricano da CDN.
+Per build e test dei punteggi non servono dipendenze. three.js è in `vendor/`; solo i font (Cinzel, EB Garamond) arrivano da Google Fonts.
 
 ## Documenti
 
@@ -40,7 +46,7 @@ Non ci sono dipendenze da installare. three.js r128 e i font (Cinzel, EB Garamon
 |---|---|
 | [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md) | come è fatto il codice: unità di misura, fisica, eventi del tiro, consigli, computer, 3D |
 | [docs/REGOLE.md](docs/REGOLE.md) | regolamenti implementati e scelte interpretative |
-| [docs/MIGRAZIONE.md](docs/MIGRAZIONE.md) | come spostare il progetto nell'account team (GitHub e Claude) |
+| [docs/MIGRAZIONE.md](docs/MIGRAZIONE.md) | migrazione nell'account team: dove vive cosa, passi GitHub, controllo finale |
 | [docs/COMMERCIALE.md](docs/COMMERCIALE.md) | diritti, licenze e privacy da sistemare prima di vendere |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | lavoro aperto e idee per la versione commerciale |
 | [docs/CONTESTO-PROGETTO.md](docs/CONTESTO-PROGETTO.md) | storia delle decisioni, da caricare in un progetto Claude |

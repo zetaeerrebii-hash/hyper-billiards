@@ -1,38 +1,68 @@
-# Migrazione nell'account team
+# Migrazione nell'account team (Regia HYPER FALSE)
 
-Il progetto vive oggi in tre posti. Ognuno si sposta in modo diverso.
+Aggiornato il 20/11/2026. Il progetto entra nella Regia come gruppo **`HF_APP_HYPER BILLIARDS`**.
 
-| Dove | Cosa c'è | Si sposta? |
+## Dove vive cosa
+
+| Cosa | Dove | Chi lo aggiorna |
 |---|---|---|
-| GitHub `zetaeerrebii-hash/maestria-goriziana` | sorgenti, build, documenti, sito GitHub Pages | sì, con il trasferimento del repository; durante il trasferimento conviene rinominarlo `hyper-billiards` (Settings → General → Repository name: GitHub reindirizza il vecchio nome) |
-| Artefatto su claude.ai (account personale) | la pagina giocabile con il link di condivisione | no: si ripubblica dall'account team, il link cambia |
-| Conversazione e memoria di Claude | storia delle decisioni | no: sostituita da `docs/CONTESTO-PROGETTO.md` |
+| Codice, build, test, documenti tecnici (`docs/`), `STATO.md` | **GitHub** `<organizzazione>/hyper-billiards` · fonte di verità | Claude Code, con pull request |
+| Decisioni, discussioni per filone, conoscenza | **Progetto Claude** `HF_APP_HYPER BILLIARDS` | soci + Claude; i documenti cambiati si ricaricano a fine ciclo |
+| Copie per il team (STATO, HF_CORE, build giocabile, riferimenti PDF) | **Google Drive** `02.AI/000. HYPER FALSE/6. HF_APP/1 HYPER BILLIARDS` | a fine ciclo |
+| HF_CORE (originale) | Progetto centro **HYPER FALSE** | Custode del brand |
+| Pagina di prova del team | Artefatto «HYPER BILLIARDS · test» (sempre lo stesso link) | si ripubblica da `dist/artifact.html` |
 
-## 1. Repository GitHub
-1. Assicurati di poter creare repository nell'organizzazione GitHub del team (ruolo *owner* o permesso di creazione).
-2. Nel repository: **Settings → General → Danger Zone → Transfer ownership**, scegli l'organizzazione. GitHub reindirizza il vecchio indirizzo e conserva storia, issue e stelle.
-   In alternativa, se vuoi tenere la copia personale: crea un repository vuoto nell'organizzazione e fai `git push` di tutti i rami.
-3. Riattiva **Settings → Pages**: *Deploy from a branch*, ramo `main`, cartella `/ (root)`. L'indirizzo diventa `https://<organizzazione>.github.io/maestria-goriziana/`.
-   Se rendi il repository privato, GitHub Pages richiede un piano a pagamento dell'organizzazione; in alternativa si pubblica `index.html` su Netlify, Vercel o Cloudflare Pages.
-4. Proteggi `main` (revisione obbligatoria) e aggiungi una Action che esegua `node tests/scoring.test.js` e `python3 tools/build.py` a ogni pull request.
+> **Non sviluppare dentro Google Drive.** La sincronizzazione di Drive e la cartella `.git` non vanno d'accordo (file bloccati, repository corrotti). In Drive c'è una copia di riferimento del codice; si lavora su un clone locale, per esempio `C:\dev\hyper-billiards`.
 
-## 2. Pagina su Claude (artefatto)
-Per quanto ne so non esiste un trasferimento diretto di un artefatto da un account personale a uno team: si ripubblica.
-1. Nell'account team apri una nuova conversazione (meglio dentro un Progetto, vedi punto 3).
-2. Allega `dist/artifact.html` e chiedi di pubblicarlo come artefatto. Oppure, da Claude Code collegato al repository, chiedi di eseguire `python3 tools/build.py` e pubblicare `dist/artifact.html`.
-3. Condividi il nuovo link con il team dal menu **Condividi**. Il vecchio link personale resta valido finché non lo elimini: conviene aggiornare chi lo usa.
+## 1. Repository GitHub (lo fai tu, con l'account proprietario)
+1. Verifica di poter creare repository nell'organizzazione (ruolo *owner* o permesso di creazione).
+2. `zetaeerrebii-hash/maestria-goriziana` → **Settings → General → Danger Zone → Transfer ownership** → organizzazione.
+3. Nell'organizzazione: **Settings → General → Repository name** → `hyper-billiards` (GitHub reindirizza i vecchi indirizzi).
+4. Clona fuori da Drive e applica le modifiche della migrazione:
+   ```bash
+   cd C:\dev
+   git clone https://github.com/<organizzazione>/hyper-billiards.git
+   cd hyper-billiards
+   git switch -c migrazione-team
+   git am "K:\Il mio Drive\02.AI\000. HYPER FALSE\6. HF_APP\1 HYPER BILLIARDS\01_CODICE\0001-migrazione-team.patch"
+   git push -u origin migrazione-team
+   ```
+   Se `git am` non si applica (il repository era diverso dallo zip), copia sopra al clone il contenuto di `01_CODICE/hyper-billiards/` e fai commit.
+5. Apri la pull request `migrazione-team` → `main` e verifica che la CI sia verde; poi unisci.
+6. **Settings → Pages**: *Deploy from a branch*, `main`, `/ (root)`. Indirizzo: `https://<organizzazione>.github.io/hyper-billiards/`. Con repository privato serve un piano a pagamento (oppure Netlify, Vercel, Cloudflare Pages).
+7. **Settings → Branches**: proteggi `main` (pull request obbligatoria, controllo «CI / verifica» richiesto).
 
-## 3. Contesto per Claude nell'account team
-- Crea un **Progetto** "HYPER BILLIARDS" (istruzioni dettagliate in [PROGETTO-CLAUDE.md](PROGETTO-CLAUDE.md)) e carica come conoscenza: `docs/CONTESTO-PROGETTO.md`, `docs/REGOLE.md`, `docs/ARCHITETTURA.md` e i PDF di riferimento (regolamenti FIBIS ed ENDAS, *Le traiettorie del biliardo*, *La Bibbia del biliardo*), se avete il diritto di usarli internamente.
-- Per lavorare sul codice con Claude Code collega il repository dell'organizzazione: `CLAUDE.md` nella radice viene letto automaticamente e contiene le regole di lavoro.
-- La memoria personale di Claude non passa all'account team; tutto ciò che serve è nei documenti.
+## 2. Artefatto su claude.ai
+Non si trasferisce: si ripubblica dall'account team da `dist/artifact.html` (documento HTML completo). Pubblicato il 20/11/2026 come «HYPER BILLIARDS · test» (https://claude.ai/artifact/Mtr6DrYCnCt1meiQhp4MqF), privato finché un socio non decide di condividerlo. Il vecchio link personale resta valido finché non lo elimini: avvisa chi lo usa.
+
+## 3. Progetto Claude
+- Nome attuale: `HF_APP_HYPER BILLIARDS` (convenzione Regia: `HF_APP_NOME`).
+- Istruzioni da incollare: `02_PROGETTO_CLAUDE/ISTRUZIONI_PROGETTO.txt` nella cartella Drive (testo anche in [PROGETTO-CLAUDE.md](PROGETTO-CLAUDE.md)).
+- Conoscenza già caricata: HF_CORE (segnaposto), STATO, CONTESTO-PROGETTO, REGOLE, ARCHITETTURA, ROADMAP, COMMERCIALE, MIGRAZIONE. Da aggiungere a mano: PDF del regolamento FIBIS e foto di riferimento del tavolo.
+- La memoria dell'account personale non passa: tutto ciò che serve è nei documenti.
 
 ## 4. Dati che non si trasferiscono
-- **Giocatori creati da selfie**, vista e zoom preferiti sono salvati nel browser (`localStorage`) per quel dominio. Cambiando indirizzo (nuovo artefatto o nuovo dominio) ripartono da zero. Avvisa chi li ha creati.
+Giocatori da selfie, vista e zoom preferiti stanno nel `localStorage` del browser per quel dominio: con il nuovo artefatto o il nuovo dominio ripartono da zero. Avvisa chi li aveva creati.
 
-## 5. Controllo finale dopo la migrazione
-- [ ] `python3 tools/build.py` e `node tests/scoring.test.js` funzionano dal nuovo repository
-- [ ] il sito pubblico si apre e una partita contro il computer arriva fino al punteggio finale
-- [ ] la vista giocatore 3D si carica (three.js da cdnjs)
-- [ ] l'artefatto team è condiviso con le persone giuste
-- [ ] i punti aperti di [COMMERCIALE.md](COMMERCIALE.md) hanno un responsabile
+## 5. Controllo finale
+- [x] `python3 tools/build.py`, `node tests/scoring.test.js` (19/19) e `npm run smoke` funzionano (20/11/2026, in cloud)
+- [x] artefatto team pubblicato e provato (pianta, 3D, telefono)
+- [ ] repository trasferito, rinominato, CI verde sulla pull request di migrazione
+- [ ] GitHub Pages attivo, partita contro il computer fino al punteggio finale dal sito pubblico
+- [ ] HF_CORE ufficiale al posto del segnaposto
+- [ ] gruppo registrato nel centro (REGISTRO_GRUPPI) e scheda test in HF_APP
+- [ ] responsabile per i punti di [COMMERCIALE.md](COMMERCIALE.md)
+
+## 6. Scheda test retroattiva da registrare in HF_APP
+La Regia apre un gruppo `HF_APP_NOME` solo dopo il test in HF_APP. HYPER BILLIARDS arriva già sviluppato: proposta da copiare in HF_APP.
+
+```
+Idea: HYPER BILLIARDS (ex Maestria Goriziana)
+Problema: imparare traiettorie, sponde e punteggi del biliardo all'italiana senza un istruttore sempre presente
+Pubblico (da validare): giocatori di circolo, principianti, scuole di biliardo
+Modello di ricavo (da validare): Scuola premium · licenza ai circoli (white label) · partnership con federazioni o riviste
+Prototipo: pagina web giocabile, goriziana e 5 birilli FIBIS, 3D, computer a 5 livelli
+Criteri di test: build e test verdi; partita completa su telefono; consigli di tiro coerenti con la fisica; nessun contenuto bloccante per la vendita non tracciato
+Esito: PROMOSSA il 20/11/2026 → gruppo HF_APP_HYPER BILLIARDS
+Riserve: diritti su ritratti, contenuti dei manuali e marchio (COMMERCIALE.md, bloccanti 1–4)
+```
