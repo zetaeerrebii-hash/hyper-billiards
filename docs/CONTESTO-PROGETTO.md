@@ -23,7 +23,8 @@ Partito da una spiegazione delle sponde e della lettura dei diamanti, è diventa
 
 ## Decisioni dopo la migrazione (Decisione · motivo · data)
 - Il progetto entra nella Regia HYPER FALSE come gruppo `HF_APP_HYPER BILLIARDS` · organizzazione dello studio · 20/11/2026
-- Repository rinominato `hyper-billiards` e trasferito nell'organizzazione; GitHub è la fonte di verità del codice · continuità della storia e lavoro di squadra · 20/11/2026
+- Repository rinominato `hyper-billiards`; GitHub è la fonte di verità del codice · continuità della storia · 20/11/2026
+- In fase di test decide e approva solo Daniele Zerbi; il repository resta nel suo account GitHub e si trasferisce all'organizzazione solo a fine test, con l'ok dei soci · velocità nella fase di prova · 20/11/2026
 - three.js servito dal proprio dominio sul sito; nell'artefatto da cdnjs · affidabilità e privacy del prodotto, artefatto leggero · 20/11/2026
 - Prova nel browser e CI obbligatorie su ogni pull request · evitare regressioni su pianta, 3D e telefono · 20/11/2026
 

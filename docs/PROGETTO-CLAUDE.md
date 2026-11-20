@@ -44,6 +44,7 @@ Una per filone, con prefisso nel titolo: **[Regole]**, **[Gioco]** (fisica, comp
 6. **Lunedì**: STATO.md va al centro HYPER FALSE per il giro di allineamento.
 
 ## 4. Persone
+- **Fase di test:** decide e approva solo Daniele; repository nel suo account GitHub.
 - Chi ha l'ultima parola sulle regole (giocatore esperto o arbitro).
 - Accesso in modifica al Progetto solo a chi decide, in lettura agli altri.
 - Un responsabile della checklist COMMERCIALE.

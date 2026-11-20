@@ -6,7 +6,7 @@ Aggiornato il 20/11/2026. Il progetto entra nella Regia come gruppo **`HF_APP_HY
 
 | Cosa | Dove | Chi lo aggiorna |
 |---|---|---|
-| Codice, build, test, documenti tecnici (`docs/`), `STATO.md` | **GitHub** `<organizzazione>/hyper-billiards` · fonte di verità | Claude Code, con pull request |
+| Codice, build, test, documenti tecnici (`docs/`), `STATO.md` | **GitHub** `zetaeerrebii-hash/hyper-billiards` (account di Daniele durante il test) · fonte di verità | Claude Code, con pull request |
 | Decisioni, discussioni per filone, conoscenza | **Progetto Claude** `HF_APP_HYPER BILLIARDS` | soci + Claude; i documenti cambiati si ricaricano a fine ciclo |
 | Copie per il team (STATO, HF_CORE, build giocabile, riferimenti PDF) | **Google Drive** `02.AI/000. HYPER FALSE/6. HF_APP/1 HYPER BILLIARDS` | a fine ciclo |
 | HF_CORE (originale) | Progetto centro **HYPER FALSE** | Custode del brand |
@@ -14,7 +14,10 @@ Aggiornato il 20/11/2026. Il progetto entra nella Regia come gruppo **`HF_APP_HY
 
 > **Non sviluppare dentro Google Drive.** La sincronizzazione di Drive e la cartella `.git` non vanno d'accordo (file bloccati, repository corrotti). In Drive c'è una copia di riferimento del codice; si lavora su un clone locale, per esempio `C:\dev\hyper-billiards`.
 
-## 1. Repository GitHub (lo fai tu, con l'account proprietario)
+## 1. Repository GitHub
+**Stato al 20/11/2026:** rinominato in `hyper-billiards`, modifiche della migrazione unite con la PR #1 (CI verde), Pages attivo su https://zetaeerrebii-hash.github.io/hyper-billiards/, `main` protetto. Il vecchio sito `…/maestria-goriziana/` risponde 404 (GitHub non reindirizza i siti Pages).
+**Fase di test:** il repository resta nell'account di Daniele, che è l'unico ad approvare. I passi qui sotto (trasferimento all'organizzazione) valgono a fine test.
+
 1. Verifica di poter creare repository nell'organizzazione (ruolo *owner* o permesso di creazione).
 2. `zetaeerrebii-hash/maestria-goriziana` → **Settings → General → Danger Zone → Transfer ownership** → organizzazione.
 3. Nell'organizzazione: **Settings → General → Repository name** → `hyper-billiards` (GitHub reindirizza i vecchi indirizzi).
@@ -47,8 +50,10 @@ Giocatori da selfie, vista e zoom preferiti stanno nel `localStorage` del browse
 ## 5. Controllo finale
 - [x] `python3 tools/build.py`, `node tests/scoring.test.js` (19/19) e `npm run smoke` funzionano (20/11/2026, in cloud)
 - [x] artefatto team pubblicato e provato (pianta, 3D, telefono)
-- [ ] repository trasferito, rinominato, CI verde sulla pull request di migrazione
-- [ ] GitHub Pages attivo, partita contro il computer fino al punteggio finale dal sito pubblico
+- [x] repository rinominato, CI verde sulla pull request di migrazione (PR #1), `main` protetto
+- [x] GitHub Pages attivo, vista 3D verificata dal sito pubblico
+- [ ] partita contro il computer fino al punteggio finale dal sito pubblico (prova manuale)
+- [ ] a fine test: trasferimento all'organizzazione
 - [ ] HF_CORE ufficiale al posto del segnaposto
 - [ ] gruppo registrato nel centro (REGISTRO_GRUPPI) e scheda test in HF_APP
 - [ ] responsabile per i punti di [COMMERCIALE.md](COMMERCIALE.md)
