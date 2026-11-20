@@ -1,0 +1,1285 @@
+<title>Maestria Goriziana</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: intestazione incisa con schede di modalità, segnapunti (partita) o barra allenamento, tavolo con sovrapposizioni, comandi e consigli sotto. Look unico, scuro e caldo: noce, bordeaux, ottone, avorio */
+:root{
+  --bg:#1c1310; --panel:#2a1b16; --panel-2:#33211a; --line:#5a3f2c;
+  --ink:#f1e6cf; --muted:#bfa98a; --brass:#c9a25a; --brass-dk:#8f6d33; --oxblood:#7a1f22; --oxblood-ink:#f7e9d4; --felt:#1d5a3b;
+  --f-display:"Cinzel","Trajan Pro",Georgia,serif;
+  --f-body:"EB Garamond",Garamond,Georgia,"Times New Roman",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+header{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(24px,4.6vw,38px);letter-spacing:.14em;margin:0;color:var(--brass);text-wrap:balance}
+.tabs{display:inline-flex;border:1px solid var(--brass-dk);border-radius:3px;overflow:hidden}
+.tabs button{border:0;border-radius:0;background:transparent;color:var(--muted);font-family:var(--f-display);font-size:14px;letter-spacing:.14em;padding:8px 18px;min-height:40px}
+.tabs button[aria-pressed="true"]{background:var(--brass);color:#24160f}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.pl{display:flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid var(--line);border-radius:4px;background:var(--panel);min-width:0}
+.pl.r{justify-content:flex-end;text-align:right}
+.pl.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.av{position:relative;width:46px;height:56px;flex:none}
+.av img{width:100%;height:100%;image-rendering:pixelated;object-fit:contain;object-position:bottom}
+.av .bd{position:absolute;right:-4px;bottom:-2px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.5)}
+.pts{font-family:var(--f-display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.nm{font-size:15px;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid{font-family:var(--f-display);font-size:12px;letter-spacing:.12em;color:var(--muted);text-align:center}
+.mid b{display:block;color:var(--brass);font-size:15px;font-weight:600;letter-spacing:.06em}
+.trainbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+.trainbar p{margin:0;color:var(--muted);font-style:italic;font-size:15px;min-width:0;flex:1 1 220px}
+.trainbar .btns{display:flex;gap:8px;flex-wrap:wrap}
+.stage{position:relative}
+canvas{width:100%;height:auto;display:block;touch-action:none;border-radius:10px;cursor:crosshair}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cin{display:flex;align-items:center;gap:14px;background:rgba(28,19,16,.92);border:2px solid var(--brass);border-radius:6px;padding:10px 20px 10px 12px;transform:scale(.6);opacity:0;transition:transform .25s cubic-bezier(.2,1.6,.4,1),opacity .2s}
+.cin.show{transform:scale(1);opacity:1}
+.cin img{width:72px;height:92px;image-rendering:pixelated}
+.cin b{display:block;font-family:var(--f-display);font-size:30px;color:var(--brass);letter-spacing:.08em;line-height:1.1}
+.cin span{display:block;font-size:18px;color:var(--ink)}
+.cin small{display:block;font-size:14px;color:var(--muted);font-style:italic;max-width:260px;margin-top:2px}
+.cin.foul{border-color:#b04a3a}
+.cin.foul b{color:#e08a72}
+.win{pointer-events:auto;background:rgba(20,13,10,.88);border-radius:10px}
+.wincard{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}
+.wincard img{width:96px;height:122px;image-rendering:pixelated}
+.wincard h2{font-family:var(--f-display);color:var(--brass);margin:0;font-size:26px;letter-spacing:.08em}
+.viewrow{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.viewrow .tabs button{min-height:34px;padding:5px 14px;font-size:12px}
+.zoom{position:absolute;top:10px;right:10px;z-index:2;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:42px;height:42px;min-height:0;padding:0;font-size:22px;line-height:1;background:rgba(28,19,16,.75);border-color:var(--brass-dk)}
+.v3{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#150e0b;cursor:ew-resize}
+@media(max-width:600px){.v3{aspect-ratio:4/3}}
+.shootrow{display:flex;gap:8px}
+.msg{min-height:24px;font-size:16px;color:var(--muted);font-style:italic;text-align:center}
+.msg b{color:var(--brass);font-weight:500;font-style:normal}
+.ctrl{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:760px){.ctrl{grid-template-columns:1fr 1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lab{font-family:var(--f-display);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.lab span{color:var(--ink);font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:.02em;font-family:var(--f-body);font-size:16px}
+.row{display:flex;align-items:center;gap:8px}
+input[type=range]{flex:1;min-width:0;accent-color:var(--brass);height:28px}
+button{font-family:var(--f-body);font-size:16px;border-radius:3px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);padding:8px 14px;cursor:pointer;min-height:40px}
+button:hover{border-color:var(--brass-dk)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.go{background:var(--oxblood);color:var(--oxblood-ink);border-color:#9b3a36;font-family:var(--f-display);font-size:19px;font-weight:600;letter-spacing:.18em;flex:1;min-height:50px}
+.go:hover{background:#8a2427}
+.hints{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.tog{display:flex;align-items:center;gap:10px;font-size:16px;cursor:pointer}
+.tog input{width:20px;height:20px;accent-color:var(--brass)}
+.tog small{color:var(--muted);font-style:italic;font-size:14px}
+.spinw{display:grid;grid-template-columns:auto auto 1fr;gap:6px 12px;align-items:center}
+.spinw svg{width:118px;height:118px;grid-row:1;grid-column:1}
+.vwrap{grid-row:1;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--muted);font-family:var(--f-display);letter-spacing:.08em}
+input[type=range].vert{writing-mode:vertical-lr;direction:rtl;width:28px;height:96px;flex:none}
+.hz{grid-row:2;grid-column:1/3;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:var(--f-display);letter-spacing:.08em}
+.side{grid-row:1/3;grid-column:3;display:flex;flex-direction:column;gap:8px;min-width:0}
+.small{font-size:14px;color:var(--muted);font-style:italic}
+@media(max-width:460px){.spinw{grid-template-columns:auto auto}.side{grid-row:3;grid-column:1/3}}
+.tips ol{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.tips li{border-left:2px solid var(--brass-dk);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:6px}
+.tips li.warn{border-left-color:#b04a3a}
+.tips li strong{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.tips li.warn strong{color:#e08a72}
+.tips li p{margin:0}
+.tips li button{align-self:flex-start;font-size:15px;min-height:36px;padding:5px 12px}
+.tips .foot{font-size:14px;color:var(--muted);font-style:italic;margin:0}
+.setup{display:flex;flex-direction:column;gap:14px}
+.setup h2{font-family:var(--f-display);font-size:18px;letter-spacing:.1em;color:var(--brass);margin:0;font-weight:500}
+.chars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.char{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 6px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px}
+.char img{width:64px;height:81px;image-rendering:pixelated}
+.char span{font-family:var(--f-display);font-size:14px;letter-spacing:.08em}
+.char[aria-pressed="true"]{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass);background:#3b2619}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:38px;padding:6px 12px;font-size:15px}
+.chips button[aria-pressed="true"]{background:var(--brass);color:#24160f;border-color:var(--brass)}
+.setgrid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:760px){.setgrid{grid-template-columns:1fr 1fr}}
+.grp{display:flex;flex-direction:column;gap:8px;min-width:0}
+.grp .lab{justify-content:flex-start}
+details{font-size:15px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--brass);font-family:var(--f-display);font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+details ul{margin:8px 0 0;padding-left:18px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.trainbar .chips{flex:0 0 auto}
+.trainbar .chips button{min-height:34px;padding:4px 12px;font-size:14px}
+.av .bd{border:1px solid rgba(0,0,0,.5)}
+.offer{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;padding:8px 12px;border:1px dashed var(--brass-dk);border-radius:4px;background:var(--panel)}
+.offer p{margin:0;font-size:15px;color:var(--muted);font-style:italic;flex:1 1 240px;min-width:0}
+.tips .now{margin:0;padding:8px 12px;border-radius:3px;background:var(--panel-2);font-size:16px}
+.tips .now.bad{border-left:3px solid #b04a3a}
+.tips .now.ok{border-left:3px solid var(--brass)}
+.tips li .ttype{font-style:normal;font-family:var(--f-display);font-size:13px;letter-spacing:.06em;color:var(--ink)}
+.shotfig{background:#170f0c;border-radius:4px;padding:6px;max-width:560px}
+.shotfig svg{width:100%;height:auto;display:block}
+.tips li .res{font-size:15px;color:var(--muted)}
+.tips li .res b{color:var(--brass);font-weight:500}
+details.man{font-size:15px}
+details.man summary{font-size:12px}
+details.man p{margin:6px 0 0;color:var(--ink);opacity:.92;line-height:1.5}
+details.man b{font-weight:500;color:var(--brass)}
+.warns{margin:0;padding-left:18px;font-size:15px;color:#e8b9a8;display:flex;flex-direction:column;gap:4px}
+.warns:empty{display:none}
+details.rules h4{font-family:var(--f-display);font-weight:500;color:var(--brass);margin:10px 0 4px;font-size:15px;letter-spacing:.06em}
+details.rules h4 small,.rules2 h4 small{font-family:var(--f-body);font-style:italic;color:var(--muted);letter-spacing:0;font-size:14px}
+details.rules ul{color:var(--ink)}
+.chars{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.char{position:relative;padding:0;background:none;border:0}
+.char .pick{width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 6px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;min-height:0}
+.char .pick[aria-pressed="true"]{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass);background:#3b2619}
+.char .pick span{font-family:var(--f-display);font-size:13px;letter-spacing:.06em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.char .del{position:absolute;top:2px;right:2px;width:26px;height:26px;min-height:0;padding:0;font-size:16px;line-height:1;border-radius:50%;background:rgba(28,19,16,.85)}
+.char .newbtn{justify-content:center;height:100%;min-height:118px;border-style:dashed}
+.char .newbtn .plus{font-size:30px;color:var(--brass);font-family:var(--f-display);letter-spacing:0}
+.newp{gap:10px}
+.nprow{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+#npPrev{width:120px;height:152px;image-rendering:pixelated;object-fit:contain;background:repeating-conic-gradient(#33211a 0 25%,#2a1b16 0 50%) 0 0/16px 16px;border:1px solid var(--line);border-radius:4px}
+.npctl{display:flex;flex-direction:column;gap:6px;flex:1 1 240px;min-width:0}
+.npctl input[type=text]{font-family:var(--f-body);font-size:16px;padding:8px 10px;border-radius:3px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);min-height:40px}
+.wrapr{flex-wrap:wrap}
+.filebtn{display:inline-flex;align-items:center;justify-content:center;font-size:16px;border-radius:3px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);padding:8px 14px;min-height:40px;cursor:pointer}
+.filebtn:hover{border-color:var(--brass-dk)}
+.filebtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.filebtn:focus-within{outline:2px solid var(--brass);outline-offset:2px}
+.err{color:#e08a72;font-size:14px;min-height:0}
+.small-go{font-size:15px;min-height:42px;flex:0 1 auto;padding:6px 16px}
+#school .intro{color:var(--muted);font-style:italic;margin:0 0 4px;max-width:70ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.wide{grid-column:1/-1}
+.card h3{font-family:var(--f-display);font-weight:500;font-size:17px;letter-spacing:.06em;color:var(--brass);margin:0;text-wrap:balance}
+.card .srcl{font-size:13px;color:var(--muted);font-style:italic;margin-top:-4px}
+.card .fig{background:#170f0c;border-radius:4px;padding:6px}
+.card .fig svg{width:100%;height:auto;display:block}
+.card p{margin:0;font-size:16px;line-height:1.55}
+.card p b{font-weight:500;color:var(--brass)}
+.meas b{color:var(--ink)!important}
+.rules2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:4px 20px}
+.rules2 h4{font-family:var(--f-display);font-weight:500;color:var(--brass);margin:4px 0;font-size:15px}
+.rules2 ul{margin:0;padding-left:18px;font-size:15px;display:flex;flex-direction:column;gap:4px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Maestria Goriziana</h1>
+    <div class="tabs" role="group" aria-label="Modalità">
+      <button id="tabTrain" aria-pressed="true">Allenamento</button>
+      <button id="tabMatch" aria-pressed="false">Partita</button>
+      <button id="tabSchool" aria-pressed="false">Scuola</button>
+    </div>
+  </header>
+
+  <div id="gameUI">
+  <section class="box setup" id="setup" hidden>
+    <div class="grp"><div class="lab">Gioco</div><div class="chips" id="gSel"></div></div>
+    <div class="setgrid">
+      <div class="grp"><div class="lab">Tu giochi con la bianca</div><div class="chars" id="cMe"></div></div>
+      <div class="grp"><div class="lab" id="labOpp">Avversario</div><div class="chars" id="cOpp"></div></div>
+    </div>
+    <div class="newp box" id="newp" hidden>
+      <div class="lab">Nuovo giocatore da foto</div>
+      <div class="nprow">
+        <img id="npPrev" alt="Anteprima del giocatore in pixel" hidden>
+        <div class="npctl">
+          <div class="row wrapr">
+            <label class="filebtn">Scatta un selfie<input type="file" id="npCam" accept="image/*" capture="user"></label>
+            <label class="filebtn">Scegli una foto<input type="file" id="npFile" accept="image/*"></label>
+          </div>
+          <label class="small" for="npName">Nome</label>
+          <input type="text" id="npName" maxlength="16" placeholder="Mario">
+          <label class="small" for="npPx">Dimensione dei pixel</label>
+          <input type="range" id="npPx" min="28" max="64" step="2" value="44">
+          <label class="tog"><input type="checkbox" id="npBg" checked> Togli lo sfondo <small>funziona meglio con uno sfondo uniforme</small></label>
+          <div class="err" id="npErr" role="alert"></div>
+          <div class="row"><button class="go small-go" id="npSave" disabled>Salva giocatore</button><button id="npCancel">Annulla</button></div>
+          <p class="small">La foto resta solo su questo dispositivo.</p>
+        </div>
+      </div>
+    </div>
+    <div class="setgrid">
+      <div class="grp"><div class="lab">Livello avversario</div><div class="chips" id="lvl"></div></div>
+      <div class="grp"><div class="lab">Partita ai punti</div><div class="chips" id="tgt"></div></div>
+    </div>
+    <button class="go" id="startMatch">Inizia partita</button>
+  </section>
+
+  <div class="score" id="scoreBar" hidden>
+    <div class="pl on" id="p0"><div class="av"><img id="i0" alt=""><span class="bd" id="b0"></span></div><div style="min-width:0"><div class="pts" id="s0">0</div><div class="nm" id="n0"></div></div></div>
+    <div class="mid" id="turn"></div>
+    <div class="pl r" id="p1"><div style="min-width:0"><div class="pts" id="s1">0</div><div class="nm" id="n1"></div></div><div class="av"><img id="i1" alt=""><span class="bd" id="b1"></span></div></div>
+  </div>
+
+  <div class="trainbar" id="trainBar">
+    <div class="chips" id="gTrain" role="group" aria-label="Gioco"></div>
+    <p>Trascina le biglie per preparare il tiro. Tiri sempre con la bianca.</p>
+    <div class="btns"><button id="redo">Ripeti tiro</button><button id="resetTrain">Posizione iniziale</button></div>
+  </div>
+
+  <div class="viewrow" id="viewRow"><span>Vista</span><div class="tabs" role="group" aria-label="Vista"><button id="vPlan" aria-pressed="true">Pianta</button><button id="vPlayer" aria-pressed="false">Giocatore</button></div></div>
+  <div class="stage" id="stageBox">
+    <canvas id="cv" aria-label="Tavolo da biliardo: tocca o trascina per mirare"></canvas>
+    <div class="zoom" id="zoomBox" hidden><button id="zIn" aria-label="Avvicina">+</button><button id="zOut" aria-label="Allontana">−</button></div>
+    <div class="v3" id="v3" hidden aria-label="Vista dal punto di vista di chi tira: trascina per mirare"></div>
+    <div class="overlay"><div class="cin" id="cin"><img alt="" id="cinImg"><div><b id="cinT">Cin cin!</b><span id="cinPts"></span><small id="cinD"></small></div></div></div>
+    <div class="overlay win" id="win" hidden><div class="wincard"><img alt="" id="winImg"><h2 id="winTxt"></h2><div class="small" id="winScore"></div><button class="go" id="again" style="flex:none;padding:8px 24px">Nuova partita</button></div></div>
+  </div>
+  <div class="shootrow" id="shootRow"><button class="go" id="shoot">Tira</button><button id="newg">Nuova partita</button></div>
+  <div class="offer" id="offerBar" hidden><p id="offerTxt"></p><button id="offerBtn"></button></div>
+  <div class="msg" id="msg">Tocca o trascina sul tavolo per orientare la stecca.</div>
+
+  <div class="ctrl" id="ctrlBox">
+    <div class="box">
+      <div class="lab">Direzione della stecca <span id="angOut">0,0°</span></div>
+      <div class="row">
+        <button id="aL" aria-label="Ruota a sinistra">−</button>
+        <input type="range" id="ang" min="0" max="359.9" step="0.1" value="0" aria-label="Direzione">
+        <button id="aR" aria-label="Ruota a destra">+</button>
+      </div>
+      <div class="lab">Forza <span id="powOut">40</span></div>
+      <input type="range" id="pow" min="5" max="100" step="1" value="40" aria-label="Forza">
+      <div class="hints">
+        <label class="tog"><input type="checkbox" id="hBase"> Prolungamento <small>fino al primo impatto</small></label>
+        <label class="tog"><input type="checkbox" id="hFull"> Tiro completo <small>percorsi e birilli</small></label>
+      </div>
+    </div>
+    <div class="box">
+      <div class="lab">Punto d'impatto <span id="spinOut">centro</span></div>
+      <div class="spinw">
+        <svg id="sp" viewBox="-60 -60 120 120" aria-label="Punto d'impatto sulla biglia">
+          <circle r="54" fill="#f3ecdc" stroke="#8f6d33" stroke-width="2"/>
+          <circle r="43" fill="none" stroke="#cdbf9f" stroke-dasharray="3 4"/>
+          <line x1="-54" y1="0" x2="54" y2="0" stroke="#cdbf9f"/><line x1="0" y1="-54" x2="0" y2="54" stroke="#cdbf9f"/>
+          <circle id="spDot" r="7" fill="#7a1f22"/>
+        </svg>
+        <div class="vwrap">alto<input type="range" class="vert" id="spV" min="-100" max="100" step="5" value="0" aria-label="Effetto alto o basso">basso</div>
+        <div class="hz">sx<input type="range" id="spH" min="-100" max="100" step="5" value="0" aria-label="Effetto laterale">dx</div>
+        <div class="side">
+          <div class="small">Alto: la biglia segue dopo l'urto. Basso: torna indietro. Destra o sinistra: dopo la sponda la biglia apre verso quel lato, e la biglia colpita riceve l'effetto contrario.</div>
+          <button id="spC">Al centro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="box tips" id="tips">
+    <div class="lab">Consigli per questo tiro</div>
+    <p class="now" id="nowLine"></p>
+    <ol id="tipList"></ol>
+    <ul class="warns" id="warnList"></ul>
+    <p class="foot">Diamanti: sponde lunghe da 0 a 8 partendo da sinistra, corte da 0 a 4 partendo dall'alto; un punto è un decimo di diamante. Il punto si legge in perpendicolare dal diamante alla sponda. «Prova questo tiro» imposta mira e forza già verificate con la fisica del gioco. Come una sponda vera, quella del gioco non è uno specchio perfetto: restituisce circa il 78% della spinta e «chiude» l'angolo d'uscita, quindi i diamanti indicati tengono già conto di questa correzione.</p>
+  </section>
+
+  <details class="rules">
+    <summary id="rulesSum">Regole</summary>
+    <div id="rulesNow"></div>
+  </details>
+  </div>
+
+  <section id="school" hidden>
+    <p class="intro">Schemi e spiegazioni tratti da <i>Le traiettorie del biliardo</i> di Margutti (BiliardoWeb), dalla <i>Bibbia del biliardo</i> e dai regolamenti ENDAS e FIBIS. I disegni sono schematici: servono a capire il ragionamento, non a misurare.</p>
+    <div class="cards" id="schoolCards"></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(()=>{
+/* ===== personaggi ===== */
+const BASE_CHARS={
+  pietro:{name:'Pietro',img:'data:image/png;base64,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'},
+  zibi:{name:'Zibi',img:'data:image/png;base64,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'},
+  vecio:{name:'Il Vecio',img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAA9CAYAAADrnOpZAAAD2ElEQVR4Xu2ZMWgUQRSGxxARRFDDKeGUYOIiWNhcmiASBCG1hVhGC0kRxEKuEFtFRA4LC4tgYVJYWFkHRAkiae5aRc7kCHoEPaJpBFE4eZrZzMzOvDdvZpes4gdHbvdm3/z/vPd2Z4kQfzm7itDfW2/3sbiV4SS3eXMLBFDCbcSaiTIQIjhvEwOhJZSX+NDMSYIM5CleEhqTbSB0onZ7hUw2xObG9+4BbmAbYCJJxkgjgG9ze2UgRLxtxX3Fc/qCNBAiHgCxWNn4lhSVLtQAJZ4Sga04ZdAXMgMYsSI4JeUiyoAslZ0k2kDRULfWUhmgesoGy0DIBBywnnLdUJwPMtcFnIdR3tgebqwMlKFpTdgGiuLn0iIa2rW1cBqg9iIwITWpLzFx0M0c9iR2TTo4OUXqpgSrMaiF9NqNqkZsk39c+0CKdnFk5Gjmp+GLs166AO+BzcbNvm2yooBFGa/fIfWRAwAQD39dBmCyHxNnNS+7l19mvKlj5O9YTIAyMShnaX/+Sm5dxYsnmqhONflzXE3EsW5bF2wpDaGM6WwZ7mxdlbnekzQDYOB4Zb9439t0XrrPMFAkal9hWdBuo5h4F0PnL4npViX9wDEGdzxFWkLA4skJ5/ipN8torNajuqhdaWhjNl610uOhMzXtN9v4ENIMJIcOoA29OX8PjY+JB1QzgDk+FC0DIWw8mxcLyuLCsSlWIs+b42MINvB9rafNu2ekktFRrdVEt7VdRiY+MajbqHMvZKt5eWcwJwZs5zji1RicJ7uWgdne2+3bqhB99bgpBP2cyBlq9QHvEpLB1p8+LNyIj3CJs4RcwEbLVu/yHOwkzVumBM7LnaYrBmcjx8qAiSlA3QLD98PItjodS7zE+OBdQjZ89v4Y6vXUO4KLzMPLtqmzPeTUXogxogrnlg+QMeBqUltwc+z1+l3x+F2TzPzlE+PifuOGNi5EfFQPADCpaQLEcQkVD2h3IdfqA5zMcIgRnykhzIBccZc46lobseKjS0hFLSdsKyBfIfMQnzFgq2mJz4RSOPbyz9nn+BD1HACuTSb9B0ttrbQ4Im3Xc8hsJa7eup253lx9mFR+YPDGp04fPpyJ1WvMeBy0lbtwquoUUT241xm3++WbmHv+WqwuzHnPPTo9I2bOnUbjmpm1EV1CKiBKsrqS/cf26Jjf/4glkBn53WUmNYCtfhlwmfndA5R4rHwA+B3KQcuGsdrmMVU+vgxQ4ssO+4WGg1x1bu1zKNRAUaj9ULiBIlcfIA1QDSyxNbKLvBrYy0DZITNQdv4b2CnknQjNgG8Dcxo5zwb+J5r4F4iCu5IqnZ7qAAAAAElFTkSuQmCC'}
+};
+let CHARS={};
+function loadChars(){
+  CHARS=Object.assign({},BASE_CHARS);
+  try{const a=JSON.parse(localStorage.getItem('mg-players')||'[]');a.forEach(p=>{if(p&&p.id&&p.img)CHARS[p.id]={name:p.name||'Giocatore',img:p.img,custom:true};});}catch(e){}
+}
+function saveCustom(){try{localStorage.setItem('mg-players',JSON.stringify(Object.entries(CHARS).filter(([k,v])=>v.custom).map(([id,v])=>({id,name:v.name,img:v.img}))));}catch(e){}}
+loadChars();
+const LEVELS=[
+  {n:1,name:'Principiante',N:20,na:2.6,np:12,top:5,ref:0},
+  {n:2,name:'Dilettante',N:45,na:1.5,np:8,top:3,ref:0},
+  {n:3,name:'Giocatore',N:90,na:0.8,np:5,top:2,ref:0},
+  {n:4,name:'Esperto',N:150,na:0.4,np:3,top:1,ref:6},
+  {n:5,name:'Maestro',N:240,na:0.15,np:1.5,top:1,ref:12}
+];
+
+/* ===== misure reali (1 unità = 2,84 mm: piano 2840 x 1420 mm = 1000 x 500) ===== */
+const MM=2.84,PW=1000,PH=500,DIA=PW/8;
+const RB=30.5/MM;            /* biglia 61 mm */
+const PR=5/MM;               /* birillo: base 10 mm */
+const DPIN=66/MM;            /* interasse birilli 66 mm */
+const SPOT=100/MM;           /* bollini a 10 cm dalla sponda corta */
+const CUSH=50/MM,WOOD=95/MM, RW=CUSH+WOOD; /* sponda: gomma + legno = 14,5 cm */
+const FR=270,DT=1/240,KEYS=['w','y','r'];
+const GAMES={
+  gor:{id:'gor',name:'Goriziana',full:'Goriziana · 9 birilli',reg:'regolamento FIBIS',col:{w:'#f3ecdc',y:'#dfae3a',r:'#b3262a'},pr:RB,
+    bn:{w:'bianca',y:'gialla',r:'pallino rosso'},targets:[100,200,300,400],def:400},
+  ita:{id:'ita',name:'Italiana',full:'Italiana · 5 birilli',reg:'regolamento FIBIS',col:{w:'#f3ecdc',y:'#dfae3a',r:'#b3262a'},pr:RB,
+    bn:{w:'bianca',y:'gialla',r:'pallino rosso'},targets:[40,60,80,100],def:60}
+};
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+cv.width=Math.round(PW+2*RW);cv.height=Math.round(PH+2*RW);
+const $=id=>document.getElementById(id);
+const fmt=(n,d=1)=>n.toFixed(d).replace('.',',');
+const C0={x:PW/2,y:PH/2};
+
+/* ===== stato ===== */
+let mode='train',S=null,trainS=null,trainSnap=null,match=null,trainGame='gor';
+let angle=0,power=40,sx=0,sy=0,moving=false,cueAnim=null,acc=0,thinking=false;
+let inHand=null,dragBall=null,aiming=false,pred=null,predKey='',tipKey='',advKey='',adv=null;
+let setupSel={me:'zibi',opp:'pietro',level:3,game:'gor',target:400};
+const gid=()=>S?S.game:(mode==='match'&&match?match.game:trainGame);
+const GM=()=>GAMES[gid()];
+const COL=k=>GM().col[k];
+const BN=k=>GM().bn[k];
+
+function makePins(g){
+  const p=[{x:C0.x,y:C0.y,t:'red',up:true}];
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>{
+    if(g==='gor'){p.push({x:C0.x+a*DPIN,y:C0.y+b*DPIN,t:'int',up:true});p.push({x:C0.x+a*2*DPIN,y:C0.y+b*2*DPIN,t:'ext',up:true});}
+    else p.push({x:C0.x+a*DPIN,y:C0.y+b*DPIN,t:'ext',up:true});
+  });
+  return p;
+}
+const ball=(x,y,r)=>({x,y,r,vx:0,vy:0,side:0,fol:0});
+function freshTable(g){
+  const G=GAMES[g];
+  return{game:g,balls:{w:ball(230,340,RB),y:ball(PW-SPOT,PH/2,RB),r:ball(PW*0.75,PH/2,G.pr)},pins:makePins(g),ev:null};
+}
+const turnIdx=()=>mode==='match'&&match?match.turn:0;
+const me=()=>turnIdx()?'y':'w', opp=()=>turnIdx()?'w':'y';
+const isCpuTurn=()=>mode==='match'&&match&&!match.over&&match.players[match.turn].cpu;
+const busy=()=>moving||!!cueAnim||thinking;
+
+function setAngle(deg){angle=((deg%360)+360)%360;$('ang').value=angle.toFixed(1);$('angOut').textContent=fmt(angle)+'°';}
+function setPower(p){power=Math.max(5,Math.min(100,Math.round(p)));$('pow').value=power;$('powOut').textContent=power;}
+function setSpin(a,b){sx=Math.round(a*20)/20;sy=Math.round(b*20)/20;
+  const m=Math.hypot(sx,sy),k=m>1?1/m:1;
+  $('spDot').setAttribute('cx',sx*k*43);$('spDot').setAttribute('cy',-sy*k*43);
+  $('spH').value=Math.round(sx*100);$('spV').value=Math.round(sy*100);
+  const p=[];if(sy>0.04)p.push('alto '+Math.round(sy*100)+'%');if(sy<-0.04)p.push('basso '+Math.round(-sy*100)+'%');if(sx>0.04)p.push('destra '+Math.round(sx*100)+'%');if(sx<-0.04)p.push('sinistra '+Math.round(-sx*100)+'%');
+  $('spinOut').textContent=p.length?p.join(', '):'centro';}
+function aimAtOpp(){const a=S.balls[me()],b=S.balls[opp()];setAngle(Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI);}
+function msg(h){$('msg').innerHTML=h;}
+const halfOf=x=>x<PW/2?0:1;
+
+/* ===== fisica: un solo motore per tiro, previsione, consigli e computer ===== */
+const speedOf=p=>150+p/100*2250;
+function launch(st,P){
+  const b=st.balls[P.shooter],a=P.angle*Math.PI/180,v=speedOf(P.power),o=P.shooter==='w'?'y':'w';
+  b.vx=Math.cos(a)*v;b.vy=Math.sin(a)*v;b.side=P.sx;b.fol=P.sy;
+  st.ev={shooter:P.shooter,opp:o,first:null,firstContact:null,railsBefore:[],pins:[],pinsBeforeFirst:false,
+    oppRail:false,oppPal:false,palBy:null,palFirstLegit:null,palRail:false,palTouched:false,
+    half0:{w:halfOf(st.balls.w.x),y:halfOf(st.balls.y.x)},crossed:{w:false,y:false},castleStop:false};
+}
+function step(st){
+  const e=st.ev;
+  for(const k of KEYS){const b=st.balls[k],s=Math.hypot(b.vx,b.vy);
+    if(s>0){const d=FR*DT;if(s<=d){b.vx=b.vy=0;}else{b.vx*=(s-d)/s;b.vy*=(s-d)/s;}}
+    else continue;
+    b.side*=1-0.25*DT;b.fol*=1-0.35*DT;
+    b.x+=b.vx*DT;b.y+=b.vy*DT;
+    let hit=null;const r=b.r;
+    if(b.x<r){b.x=r;if(rail(b,-1,0))hit='short';} if(b.x>PW-r){b.x=PW-r;if(rail(b,1,0))hit='short';}
+    if(b.y<r){b.y=r;if(rail(b,0,-1))hit='long';} if(b.y>PH-r){b.y=PH-r;if(rail(b,0,1))hit='long';}
+    if(hit){if(k===e.shooter&&!e.first)e.railsBefore.push(hit);if(k===e.opp&&e.first)e.oppRail=true;if(k==='r')e.palRail=true;}
+    if(k!=='r'&&halfOf(b.x)!==e.half0[k])e.crossed[k]=true;
+    for(const p of st.pins){if(p.up&&Math.abs(p.x-b.x)<r+PR&&Math.hypot(p.x-b.x,p.y-b.y)<r+PR){p.up=false;
+      let cls='ok';
+      if(k===e.shooter){cls='own';if(!e.first)e.pinsBeforeFirst=true;}
+      else if(k===e.opp){if(!e.oppRail&&!e.oppPal)cls='fisso';}
+      else if(e.palBy===e.opp&&!e.palRail)cls='falsofisso';
+      e.pins.push({t:p.t,by:k,cls});b.vx*=0.97;b.vy*=0.97;}}
+  }
+  for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)collide(st,KEYS[i],KEYS[j]);
+}
+function rail(b,nx,ny){
+  const vn=b.vx*nx+b.vy*ny;if(vn<=0)return false;
+  b.vx-=(1+0.78)*vn*nx;b.vy-=(1+0.78)*vn*ny;
+  const k=0.5*b.side*vn;b.vx+=-k*ny;b.vy+=k*nx;b.side*=0.55;return true;
+}
+function collide(st,ka,kb){
+  const a=st.balls[ka],b=st.balls[kb],rs=a.r+b.r;let dx=b.x-a.x,dy=b.y-a.y;
+  if(Math.abs(dx)>=rs||Math.abs(dy)>=rs)return;
+  const d=Math.hypot(dx,dy);if(d>=rs||d===0)return;const nx=dx/d,ny=dy/d,ov=rs-d;
+  a.x-=nx*ov/2;a.y-=ny*ov/2;b.x+=nx*ov/2;b.y+=ny*ov/2;
+  const rel=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;if(rel<=0)return;
+  const pre={a:{vx:a.vx,vy:a.vy},b:{vx:b.vx,vy:b.vy}};
+  const j=rel*(1+0.96)/2;a.vx-=j*nx;a.vy-=j*ny;b.vx+=j*nx;b.vy+=j*ny;
+  const sTot=a.side+b.side;
+  if(Math.abs(sTot)>0.01){const tx=ny,ty=-nx,tk=0.07*Math.max(-1,Math.min(1,sTot))*j;
+    b.vx+=tk*tx;b.vy+=tk*ty;a.vx-=tk*tx;a.vy-=tk*ty;const T=0.2*sTot;a.side-=T;b.side-=T;}
+  for(const [o,k] of [[a,'a'],[b,'b']]){if(Math.abs(o.fol)>0.02){const s=Math.hypot(pre[k].vx,pre[k].vy);if(s>1){o.vx+=pre[k].vx*o.fol*0.36;o.vy+=pre[k].vy*o.fol*0.36;}o.fol=0;}}
+  const e=st.ev,pair=[ka,kb];
+  if(!e.firstContact&&pair.includes(e.shooter))e.firstContact={x:st.balls[e.shooter].x,y:st.balls[e.shooter].y};
+  if(pair.includes(e.shooter)&&!e.first)e.first=pair.find(x=>x!==e.shooter);
+  if(pair.includes('r')){const other=pair.find(x=>x!=='r');e.palTouched=true;if(!e.palBy)e.palBy=other;
+    if(e.first===e.opp&&!e.palFirstLegit)e.palFirstLegit=other;if(other===e.opp)e.oppPal=true;}
+}
+const still=st=>KEYS.every(k=>Math.abs(st.balls[k].vx)+Math.abs(st.balls[k].vy)<3);
+function stopAll(st){KEYS.forEach(k=>{st.balls[k].vx=st.balls[k].vy=0;});}
+function finishEv(st){const e=st.ev;e.castleStop=['w','y'].some(k=>Math.hypot(st.balls[k].x-C0.x,st.balls[k].y-C0.y)<2*DPIN+RB&&e.pins.some(p=>p.by===k));}
+function cloneTable(st){return{game:st.game,balls:{w:{...st.balls.w},y:{...st.balls.y},r:{...st.balls.r}},pins:st.pins.map(p=>({...p})),ev:null};}
+function simulate(P,place,record){
+  const st=cloneTable(S);if(place){st.balls[P.shooter].x=place.x;st.balls[P.shooter].y=place.y;}
+  launch(st,P);
+  const paths=record?{w:[[st.balls.w.x,st.balls.w.y]],y:[[st.balls.y.x,st.balls.y.y]],r:[[st.balls.r.x,st.balls.r.y]]}:null,moved={w:false,y:false,r:false};
+  let n=0;
+  while(n<240*25){step(st);n++;
+    if(record&&n%3===0)KEYS.forEach(k=>{const b=st.balls[k];if(b.vx||b.vy){moved[k]=true;paths[k].push([b.x,b.y]);}});
+    if(still(st))break;}
+  stopAll(st);finishEv(st);
+  if(record)KEYS.forEach(k=>paths[k].push([st.balls[k].x,st.balls[k].y]));
+  return{st,paths,moved,ev:st.ev,fallen:st.pins.filter(p=>!p.up)};
+}
+const curParams=()=>({shooter:me(),angle,power,sx,sy});
+
+/* ===== regole ===== */
+const plural=(n,a,b)=>n+' '+(n>1?b:a);
+function pinCount(list,g){
+  const ext=list.filter(p=>p.t==='ext').length,int=list.filter(p=>p.t==='int').length,red=list.some(p=>p.t==='red');
+  let pts=0;const parts=[];
+  if(g==='gor'){
+    if(ext){pts+=ext*2;parts.push(plural(ext,'esterno da 2','esterni da 2'));}
+    if(int){pts+=int*8;parts.push(plural(int,'interno da 8','interni da 8'));}
+    if(red){const v=(ext+int)?10:30;pts+=v;parts.push('rosso '+v+((ext+int)?'':' da solo'));}
+  }else{
+    if(ext){pts+=ext*2;parts.push(plural(ext,'birillo bianco da 2','birilli bianchi da 2'));}
+    if(red){const v=ext?4:10;pts+=v;parts.push('rosso '+v+(ext?'':' da solo'));}
+  }
+  return{pts,parts};
+}
+/* Goriziana e Italiana: regolamento FIBIS per la stecca. */
+/* punti negativi: si spiega chi ha abbattuto cosa, perché il totale del tiro va tutto all'avversario */
+function pinNames(list,g){const ext=list.filter(p=>p.t==='ext').length,int=list.filter(p=>p.t==='int').length,red=list.some(p=>p.t==='red'),o=[];
+  if(ext)o.push(plural(ext,g==='gor'?'esterno':'bianco',g==='gor'?'esterni':'bianchi'));if(int)o.push(plural(int,'interno','interni'));if(red)o.push('il rosso');return o.join(', ');}
+function negResult(e,g,pts,parts){
+  const mine=e.pins.filter(p=>p.by===e.shooter),other=e.pins.filter(p=>p.by!==e.shooter);
+  const det=['con la tua bilia: '+pinNames(mine,g)];
+  if(other.length)det.push('con le altre bilie: '+pinNames(other,g));
+  det.push('valore: '+parts.join(', '));
+  const text=other.length?'Punti all\'avversario: la tua bilia ha abbattuto birilli, e quando un tiro fa punti buoni e cattivi insieme il totale va all\'avversario':'Punti all\'avversario: la tua bilia ha abbattuto birilli';
+  return{to:'opp',pts,parts:det,text,foul:'neg',pen:0};
+}
+function evaluate(e,g){
+  g=g||gid();
+  const pc=pinCount(e.pins,g);
+  if(g==='gor'){
+    /* FIBIS, stecca: art. 24 (falli), 29 (tiro indiretto), 30 (birilli), 31 (pallino) */
+    /* indiretto solo se la tua bilia tocca una sponda e POI colpisce l'avversaria, senza aver prima abbattuto birilli */
+    const ind=e.first===e.opp&&e.railsBefore.length>0&&!e.pinsBeforeFirst,mult=ind?2:1;
+    let f=null;
+    if(!e.first)f={code:'miss',pen:2,text:'Fallo: bilia avversaria mancata'};
+    else if(e.first==='r')f={code:'pal',pen:4,text:'Fallo: prima il pallino'};
+    else if(e.pinsBeforeFirst)f={code:'pins',pen:2,text:'Fallo: birilli abbattuti prima della bilia avversaria'};
+    let pts=pc.pts*mult;const parts=pc.parts.slice();
+    if(f){if(ind&&pc.pts)parts.push('birilli doppi di sponda');
+      if(e.palTouched&&f.code!=='pal'){pts+=2;parts.push('pallino 2');}
+      return{to:'opp',pts:pts+f.pen,parts:['penalità '+f.pen].concat(parts),text:f.text,foul:f.code,pen:f.pen,inHand:true,offer:true};}
+    if(e.palFirstLegit){const v=6*mult;pts+=v;parts.push('pallino '+v);}
+    if(ind&&(pc.pts||e.palFirstLegit))parts.push('doppio: tiro indiretto');
+    if(e.pins.some(p=>p.cls==='own'))return negResult(e,g,pts,parts);
+    const kind=ind?'Tiro indiretto':'Tiro diretto';
+    return{to:'me',pts,parts,text:pts?kind+': '+parts.join(', '):'Tiro valido, nessun punto',kind};
+  }
+  /* italiana */
+  let f=null;
+  if(!e.first)f={code:'miss',pen:2,text:'Fallo: bilia avversaria mancata'};
+  else if(e.first==='r')f={code:'pal',pen:4,text:'Fallo: prima il pallino'};
+  else if(e.pinsBeforeFirst)f={code:'pins',pen:2,text:'Fallo: birilli abbattuti prima della bilia avversaria'};
+  if(f){let pts=pc.pts+f.pen;const parts=['penalità '+f.pen].concat(pc.parts);if(e.palTouched){pts+=2;parts.push('pallino 2');}
+    return{to:'opp',pts,parts,text:f.text,foul:f.code,pen:f.pen,inHand:true,offer:true};}
+  let pts=pc.pts;const parts=pc.parts.slice();
+  if(e.palFirstLegit){const v=e.palFirstLegit===e.shooter?4:3;pts+=v;parts.push('pallino '+v);}
+  if(e.pins.some(p=>p.cls==='own'))return negResult(e,g,pts,parts);
+  const kind=e.railsBefore.length?'Tiro di sponda':'Tiro diretto';
+  return{to:'me',pts,parts,text:pts?kind+': '+parts.join(', '):'Tiro valido, nessun punto',kind};
+}
+const cpuValue=r=>r.to==='me'?r.pts+(r.pts?0:0.2):-(r.pts+(r.inHand||r.offer?3:0));
+
+/* ===== input mira e trascinamento ===== */
+function toPlay(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*cv.width-RW,y:(e.clientY-r.top)/r.height*cv.height-RW};}
+function freeSpot(k,x,y){
+  const rk=S.balls[k].r;
+  for(const q of KEYS)if(q!==k&&Math.hypot(x-S.balls[q].x,y-S.balls[q].y)<rk+S.balls[q].r+1)return false;
+  for(const pn of S.pins)if(Math.hypot(x-pn.x,y-pn.y)<rk+PR+2)return false;
+  return true;}
+const clampHalf=(x,h)=>h?Math.max(PW/2+RB,Math.min(PW-RB,x)):Math.max(RB,Math.min(PW/2-RB,x));
+const allowedHalf=()=>1-halfOf(S.balls[inHand.op].x);
+cv.addEventListener('pointerdown',e=>{
+  if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;
+  cv.setPointerCapture(e.pointerId);const p=toPlay(e);
+  const grab=mode==='train'?KEYS:(inHand?[inHand.me]:[]);
+  let best=null,bd=RB*2.8;for(const k of grab){const d=Math.hypot(p.x-S.balls[k].x,p.y-S.balls[k].y);if(d<bd){bd=d;best=k;}}
+  if(best){dragBall=best;return;}
+  aiming=true;aimTo(e);});
+cv.addEventListener('pointermove',e=>{if(dragBall)dragTo(e);else if(aiming)aimTo(e);});
+cv.addEventListener('pointerup',()=>{aiming=false;dragBall=null;});
+cv.addEventListener('pointercancel',()=>{aiming=false;dragBall=null;});
+function aimTo(e){const p=toPlay(e),b=S.balls[me()];if(Math.hypot(p.x-b.x,p.y-b.y)<4)return;setAngle(Math.atan2(p.y-b.y,p.x-b.x)*180/Math.PI);}
+function dragTo(e){const p=toPlay(e),r=S.balls[dragBall].r;let x=Math.max(r,Math.min(PW-r,p.x)),y=Math.max(r,Math.min(PH-r,p.y));
+  if(mode==='match')x=clampHalf(x,allowedHalf());
+  if(!freeSpot(dragBall,x,y))return;S.balls[dragBall].x=x;S.balls[dragBall].y=y;
+  if(dragBall===me()||dragBall===opp())aimAtOpp();}
+$('ang').addEventListener('input',e=>setAngle(+e.target.value));
+$('aL').onclick=()=>setAngle(angle-0.2);$('aR').onclick=()=>setAngle(angle+0.2);
+$('pow').addEventListener('input',e=>setPower(+e.target.value));
+$('spH').addEventListener('input',e=>setSpin(+e.target.value/100,sy));
+$('spV').addEventListener('input',e=>setSpin(sx,+e.target.value/100));
+$('spC').onclick=()=>setSpin(0,0);
+
+/* ===== tiro ===== */
+$('shoot').onclick=()=>{if(busy()||isCpuTurn())return;if(mode==='match'&&(!match||match.over))return;fire();};
+function fire(){
+  if(mode==='train')trainSnap={w:{...S.balls.w},y:{...S.balls.y},r:{...S.balls.r},angle,power,sx,sy};
+  if(match)match.offer=null;showOffer();
+  inHand=null;dragBall=null;cueAnim={t:0};
+}
+function strike(){launch(S,curParams());moving=true;acc=0;if(mode==='train')msg('…');}
+
+/* ===== fine tiro ===== */
+function settle(){
+  moving=false;finishEv(S);const g=S.game,r=evaluate(S.ev,g);S.pins=makePins(g);
+  if(mode==='train'){
+    if(r.to==='me'){msg(r.pts?'<b>+'+r.pts+' punti</b> · '+r.text+'.':r.text+'.');if(r.pts)popup(CHARS.zibi.img,'+'+r.pts,'punti',r.parts);}
+    else{msg('<b>'+r.text+':</b> '+r.pts+' punti all\'avversario ('+r.parts.join(', ')+').');popup(CHARS.vecio.img,'Cin cin!','+'+r.pts+' all\'avversario',r.parts,true);}
+    tipKey='';advKey='';aimAtOpp();setSpin(0,0);return;
+  }
+  const t=match.turn,o=1-t,P=match.players,nm=i=>CHARS[P[i].char].name;
+  if(r.to==='me'){match.score[t]+=r.pts;msg(r.pts?'<b>+'+r.pts+' a '+nm(t)+'</b> · '+r.text+'.':nm(t)+': '+r.text.toLowerCase()+'.');
+    if(r.pts)popup(CHARS[P[t].char].img,'+'+r.pts,'punti a '+nm(t),r.parts);}
+  else{match.score[o]+=r.pts;msg('<b>'+r.text+':</b> '+r.pts+' punti a '+nm(o)+' ('+r.parts.join(', ')+').');
+    popup(CHARS.vecio.img,'Cin cin!',nm(t)+' beve: +'+r.pts+' a '+nm(o),r.parts,true);}
+  match.turn=o;match.offer=null;
+  const mk={me:o?'y':'w',op:t?'y':'w'};
+  if(r.inHand){inHand=mk;placeInHand();match.offer='bollino';}
+  else inHand=null;
+  if(!P[o].cpu){
+    if(inHand)msg($('msg').innerHTML+' '+nm(o)+' ha la bilia libera: mettila nella metà illuminata.');
+  }
+  updateScore();showOffer();
+  const win=match.score.findIndex(s=>s>=match.target);
+  if(win>=0){match.over=true;showWin(win);return;}
+  aimAtOpp();setSpin(0,0);
+  if(isCpuTurn())laterCpu(700);
+}
+function placeInHand(){
+  const m=S.balls[inHand.me],h=allowedHalf();if(halfOf(m.x)===h&&freeSpot(inHand.me,m.x,m.y))return;
+  const xs=h?PW*0.75:PW*0.25;
+  for(const [a,b] of [[PW-m.x,m.y],[xs,PH*0.68],[xs,PH*0.32],[xs,PH/2],[h?PW*0.9:PW*0.1,PH*0.68]]){const x=clampHalf(a,h);if(freeSpot(inHand.me,x,b)){m.x=x;m.y=b;return;}}
+}
+/* penitenze: goriziana art. 12 (centrale del quadrante opposto al pallino), italiana art. 18.5 (bollino di partenza) */
+function showOffer(){
+  const bar=$('offerBar');const ok=mode==='match'&&match&&match.offer&&!match.over&&!isCpuTurn()&&!busy();
+  bar.hidden=!ok;if(!ok)return;
+  $('offerBtn').textContent=match.offer==='centrale'?'Bersaglio in penitenza centrale':'Bilia avversaria sul bollino';
+  $('offerTxt').textContent=match.offer==='centrale'?'Dopo il fallo puoi spostare la biglia avversaria nella penitenza centrale del quadrante opposto al pallino (art. 12).':'Dopo il fallo puoi far mettere la bilia avversaria sul bollino di partenza (art. 18).';
+}
+$('offerBtn').onclick=()=>{
+  if(!match||!match.offer||busy())return;
+  const tk=inHand?inHand.op:opp(),pal=S.balls.r,b=S.balls[tk];
+  let x,y=PH/2;
+  if(match.offer==='centrale')x=halfOf(pal.x)?PW*0.25:PW*0.75;else x=PW-SPOT;
+  for(const dy of [0,30,-30,60,-60]){if(freeSpot(tk,x,y+dy)){b.x=x;b.y=y+dy;break;}}
+  match.offer=null;showOffer();if(inHand)placeInHand();aimAtOpp();predKey='';
+  msg('Biglia avversaria spostata in penitenza.');
+};
+
+/* ===== cin cin ===== */
+let cinT=null;
+function popup(img,title,line,parts,foul){const c=$('cin');$('cinImg').src=img;$('cinT').textContent=title;$('cinPts').textContent=line;$('cinD').textContent=(parts||[]).join(' · ');c.classList.toggle('foul',!!foul);c.classList.add('show');clearTimeout(cinT);cinT=setTimeout(()=>c.classList.remove('show'),foul?2800:2300);}
+
+/* ===== computer ===== */
+let gen=0;
+function laterCpu(ms){const g=gen;setTimeout(()=>{if(g===gen)cpuPlay();},ms);}
+function cancelAll(){gen++;moving=false;cueAnim=null;thinking=false;acc=0;dragBall=null;aiming=false;predKey='';tipKey='';advKey='';if(V3.ok){V3.hintKey='';V3.aimKey='';V3.snap=true;}}
+function finishNow(){
+  gen++;thinking=false;
+  if(cueAnim){cueAnim=null;strike();}
+  let n=0;while(moving&&n<240*40){step(S);n++;if(still(S)){stopAll(S);settle();}}
+  if(moving){stopAll(S);settle();}
+  gen++;
+}
+function cpuPlay(){
+  const g=gen;
+  if(!isCpuTurn()||busy())return;
+  const L=LEVELS[match.players[match.turn].level-1],sh=me(),op=opp();thinking=true;showOffer();
+  $('turn').innerHTML=GM().name+' a '+match.target+'<b>'+CHARS[match.players[match.turn].char].name+' studia il tiro…</b>';
+  let places=[null];
+  if(inHand){const h=allowedHalf();places=[];for(let i=0;i<8;i++){const x=clampHalf(PW*(h?0.55:0.05)+Math.random()*PW*0.4,h),y=RB+Math.random()*(PH-2*RB);if(freeSpot(sh,x,y))places.push({x,y});}if(!places.length)places=[null];}
+  const cands=[];
+  for(let i=0;i<L.N;i++){
+    const place=places[i%places.length],W=place||S.balls[sh],O=S.balls[op];
+    let a;
+    if(Math.random()<0.7){const dx=O.x-W.x,dy=O.y-W.y,d=Math.hypot(dx,dy),mx=Math.asin(Math.min(1,2*RB/d));a=Math.atan2(dy,dx)+(Math.random()*1.9-0.95)*mx;}
+    else a=Math.random()*Math.PI*2;
+    const spin=Math.random()<0.5;
+    cands.push({place,P:{shooter:sh,angle:a*180/Math.PI,power:20+Math.random()*70,sx:spin?(Math.random()*1.2-0.6):0,sy:spin?(Math.random()*1.2-0.6):0}});
+  }
+  if(L.n>=2)for(const place of places){const W=place||S.balls[sh];for(const so of plans(sh,W)){
+    for(let k=0;k<(L.n>=4?6:3);k++)cands.push({place,P:{shooter:sh,angle:so.ang+(Math.random()-0.5)*0.8,power:Math.max(10,Math.min(100,so.pow+(Math.random()-0.5)*16)),sx:0,sy:k%2?-0.3:0}});}}
+  let i=0;const scored=[];
+  function chunk(){
+    if(g!==gen)return;
+    const end=Math.min(cands.length,i+8);
+    for(;i<end;i++){const c=cands[i];c.v=cpuValue(evaluate(simulate(c.P,c.place,false).ev));scored.push(c);}
+    if(i<cands.length){setTimeout(chunk,0);return;}
+    scored.sort((a,b)=>b.v-a.v);
+    if(L.ref){const top=scored.slice(0,4);for(const c of top)for(let k=0;k<L.ref;k++){
+      const P={...c.P,angle:c.P.angle+(Math.random()-0.5)*1.2,power:Math.max(10,Math.min(100,c.P.power+(Math.random()-0.5)*10))};
+      const v=cpuValue(evaluate(simulate(P,c.place,false).ev));scored.push({place:c.place,P,v});}
+      scored.sort((a,b)=>b.v-a.v);}
+    const pick=scored[Math.floor(Math.random()*Math.min(L.top,scored.length))];
+    if(pick.place){S.balls[sh].x=pick.place.x;S.balls[sh].y=pick.place.y;}
+    const gauss=()=>{let u=0;for(let q=0;q<4;q++)u+=Math.random();return (u-2)/0.58;};
+    setAngle(pick.P.angle+gauss()*L.na);setPower(pick.P.power*(1+gauss()*L.np/100));setSpin(pick.P.sx,pick.P.sy);
+    thinking=false;setTimeout(()=>{if(g===gen&&isCpuTurn()&&!busy())fire();},650);
+  }
+  setTimeout(chunk,30);
+}
+
+/* ===== geometria per i consigli ===== */
+function segDist(p,a,b){const vx=b.x-a.x,vy=b.y-a.y,L=vx*vx+vy*vy;let t=L?((p.x-a.x)*vx+(p.y-a.y)*vy)/L:0;t=Math.max(0,Math.min(1,t));return Math.hypot(p.x-a.x-vx*t,p.y-a.y-vy*t);}
+function blocked(a,b,skip,rad,ignoreCastle){
+  for(const pn of S.pins){if(ignoreCastle&&Math.hypot(pn.x-C0.x,pn.y-C0.y)<2*DPIN+1)continue;if(segDist(pn,a,b)<rad+PR+1)return 'pin';}
+  for(const k of KEYS){if(skip.includes(k))continue;if(segDist(S.balls[k],a,b)<rad+S.balls[k].r+0.5)return k;}
+  return null;}
+const degOf=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+const unit=(x,y)=>{const m=Math.hypot(x,y)||1;return{x:x/m,y:y/m};};
+function cutDeg(dirIn,u){const d=unit(dirIn.x,dirIn.y);return Math.acos(Math.max(-1,Math.min(1,d.x*u.x+d.y*u.y)))*180/Math.PI;}
+function powerFor(travel,cut,objDist,rails){
+  const vo=Math.sqrt(2*FR*(objDist+60));
+  let vw=vo/(Math.max(0.25,Math.cos(cut*Math.PI/180))*0.98);
+  if(rails)vw/=Math.pow(0.85,rails);
+  const v0=Math.sqrt(vw*vw+2*FR*travel);
+  return Math.max(15,Math.min(100,Math.round(((v0-150)/2250*100)/5)*5));
+}
+/* sponde: linea del centro biglia (a un raggio dal becco). Lettura dei diamanti in perpendicolare: lunghe 0-8 da sinistra, corte 0-4 dall'alto */
+const RAILS=[
+  {id:'top',name:'sponda lunga in alto',type:'long',axis:'y',v:RB,read:p=>p.x/DIA},
+  {id:'bot',name:'sponda lunga in basso',type:'long',axis:'y',v:PH-RB,read:p=>p.x/DIA},
+  {id:'lft',name:'sponda corta a sinistra',type:'short',axis:'x',v:RB,read:p=>p.y/DIA},
+  {id:'rgt',name:'sponda corta a destra',type:'short',axis:'x',v:PW-RB,read:p=>p.y/DIA}
+];
+/* specchio corretto per la sponda del gioco: restituisce il 78% della velocità perpendicolare, quindi il punto virtuale sta a d/0,78 oltre la sponda */
+const ERAIL=0.78;
+const mirror=(p,rl)=>rl.axis==='y'?{x:p.x,y:rl.v+(rl.v-p.y)/ERAIL}:{x:rl.v+(rl.v-p.x)/ERAIL,y:p.y};
+function railHit(a,b,rl){/* segmento a->b (b specchiato) incontra la sponda */
+  const dd=rl.axis==='y'?b.y-a.y:b.x-a.x;if(Math.abs(dd)<1e-6)return null;
+  const t=rl.axis==='y'?(rl.v-a.y)/dd:(rl.v-a.x)/dd;if(t<=0.002||t>=0.9995)return null;
+  const P={x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y)};
+  if(P.x<RB-0.5||P.x>PW-RB+0.5||P.y<RB-0.5||P.y>PH-RB+0.5)return null;return P;}
+const diaTxt=(rl,P)=>{const d=rl.read(P);return 'diamante '+fmt(d)+' ('+Math.round(d*10)+' punti)';};
+/* piani di tiro: percorso della bersaglio verso il castello + percorso della battente verso il punto d'impatto */
+function plans(sh,W){
+  const g=gid(),op=sh==='w'?'y':'w',O=S.balls[op];W=W||S.balls[sh];
+  const tpaths=[];
+  {const u=unit(C0.x-O.x,C0.y-O.y);if(!blocked(O,C0,[op,sh],O.r,true))tpaths.push({via:null,u,dist:Math.hypot(C0.x-O.x,C0.y-O.y)});}
+  for(const rl of RAILS){const A=mirror(C0,rl),P2=railHit(O,A,rl);if(!P2)continue;
+    if(blocked(O,P2,[op,sh],O.r,false)||blocked(P2,C0,[op,sh],O.r,true))continue;
+    tpaths.push({via:rl,P2,u:unit(A.x-O.x,A.y-O.y),dist:Math.hypot(P2.x-O.x,P2.y-O.y)+Math.hypot(C0.x-P2.x,C0.y-P2.y)});}
+  const out=[];
+  for(const tp of tpaths){
+    const G={x:O.x-tp.u.x*(O.r+W.r),y:O.y-tp.u.y*(O.r+W.r)};
+    const v={x:G.x-W.x,y:G.y-W.y},cut=cutDeg(v,tp.u);
+    if(cut<70&&!blocked(W,G,[sh,op],W.r,false)){const tr=Math.hypot(v.x,v.y);out.push({kind:'dir',tp,G,cut,travel:tr,ang:degOf(W,G),pow:powerFor(tr,cut,tp.dist,0)});}
+    for(const rl of RAILS){const P=railHit(W,mirror(G,rl),rl);if(!P)continue;
+      if(blocked(W,P,[sh],W.r,false)||blocked(P,G,[sh,op],W.r,false))continue;
+      const c=cutDeg({x:G.x-P.x,y:G.y-P.y},tp.u);if(c>65)continue;
+      const tr=Math.hypot(P.x-W.x,P.y-W.y)+Math.hypot(G.x-P.x,G.y-P.y);
+      out.push({kind:'rail',rl,P,tp,G,cut:c,travel:tr,ang:degOf(W,P),pow:powerFor(tr,c,tp.dist,1)});}
+    /* due sponde: doppio specchio */
+    for(const r1 of RAILS)for(const r2 of RAILS){if(r1===r2)continue;
+      const G2=mirror(G,r2),G1=mirror(G2,r1),P1=railHit(W,G1,r1);if(!P1)continue;const Q=railHit(P1,G2,r2);if(!Q)continue;
+      if(blocked(W,P1,[sh],W.r,false)||blocked(P1,Q,[sh],W.r,false)||blocked(Q,G,[sh,op],W.r,false))continue;
+      const c=cutDeg({x:G.x-Q.x,y:G.y-Q.y},tp.u);if(c>65)continue;
+      const tr=Math.hypot(P1.x-W.x,P1.y-W.y)+Math.hypot(Q.x-P1.x,Q.y-P1.y)+Math.hypot(G.x-Q.x,G.y-Q.y);
+      out.push({kind:'rail2',rl:r1,rl2:r2,P:P1,Q,tp,G,cut:c,travel:tr,ang:degOf(W,P1),pow:powerFor(tr,c,tp.dist,2)});}
+  }
+  return out;
+}
+function refine(o){/* aggiusta mira e forza con la stessa fisica del gioco, senza cambiare il tipo di colpo */
+  const sh=me();let best=null;
+  for(let da=-2;da<=2.01;da+=0.25)for(const dp of[-10,0,10]){
+    const P={shooter:sh,angle:o.ang+da,power:Math.max(10,Math.min(100,o.pow+dp)),sx:0,sy:0};
+    const ev=simulate(P,null,false).ev;
+    const sameKind=o.kind==='dir'?ev.railsBefore.length===0:(ev.railsBefore[0]===o.rl.type&&(o.kind==='rail'?ev.railsBefore.length===1:ev.railsBefore.length>=2));
+    if(!sameKind||ev.first!==opp())continue;
+    const r=evaluate(ev),v=r.to==='me'?r.pts:-r.pts-1;
+    if(!best||v>best.v||(v===best.v&&Math.abs(da)<Math.abs(best.da)))best={v,da,P,r};
+  }
+  return best;
+}
+
+/* ===== consigli: due colpi + testi dai manuali ===== */
+const MANUAL={
+  dirGor:'<b>Regolamento FIBIS, art. 30 e 31:</b> birilli esterni 2, interni 8, rosso 10 con altri o 30 da solo, anche a castello incompleto; il pallino vale sempre 6, che lo tocchi la bilia avversaria o la tua dopo averla colpita. <b>Margutti, lezione 1:</b> per mandare la bersaglio sul castello passando da una sponda si mira il punto speculare del castello oltre la sponda: le traiettorie si cercano fuori dal biliardo.',
+  dirIta:'<b>Regolamento FIBIS, art. 8:</b> birilli bianchi 2 punti, rosso 4 con altri o 10 da solo; pallino 4 se lo prende la tua bilia dopo l\'avversaria, 3 se lo prende l\'avversaria. <b>Margutti, lezione 5:</b> se colpisci in pienezza, con il colpo frenato la battente dopo l\'urto tende ad arrestarsi; con effetto in testa segue la bersaglio.',
+  calcio:'<b>FIBIS, art. 29:</b> il tiro è <i>indiretto</i> quando la tua bilia tocca almeno una sponda prima dell\'avversaria: birilli e pallino raddoppiano (il rosso da solo vale 60, il pallino 12); la penalità dei falli invece resta 2. <b>Margutti, lezione 2:</b> la sponda non è uno specchio perfetto; dopo l\'urto la biglia plana e slitta (scivolamento), più sul biliardo nuovo che sul battuto, quindi la mira geometrica va corretta con prova o con un filo d\'effetto a favore.',
+  spondaBiglia:'<b>ENDAS, art. 7:</b> se la battente tocca prima la sponda lunga si chiama <i>sponda e biglia</i> e conta come tiro diretto, quindi i birilli non raddoppiano. Attenzione al <i>traversino</i>: se dopo la sponda laterale la bersaglio va dritta sui birilli, i punti vanno all\'avversario. <b>Margutti, lezione 3:</b> conviene prendere i riferimenti sulla linea dei diamanti, che anticipa un poco l\'impatto e recupera parte dello scivolamento.',
+  dueSponde:'<b>Bibbia del biliardo, due sponde a scendere:</b> dal punto fisso 10 della corta si traguarda la bersaglio nel punto da colpire e si trova l\'uscita in corta; poi si traguarda quell\'uscita con il centro della battente e si aggiunge lo scarto letto sulla sponda di partenza. Il risultato è il punto di battuta per un tiro di misura; un punto in meno per un tiro a scendere, due per un tiro al volo. <b>Margutti, lezione 9:</b> più sponde si leggono come un biliardo virtuale ruotato o scalato.',
+  railIta:'<b>Margutti, lezione 1, teoria del triangolo isoscele:</b> l\'angolo d\'uscita dalla sponda è uguale a quello d\'entrata; per raggiungere un punto si mira a metà della base tra partenza e arrivo, cioè al punto speculare oltre la sponda. <b>Bibbia del biliardo:</b> se le sponde "mollano", accompagna il tiro con una carezza di effetto a favore.'
+};
+function advice(){
+  const sh=me(),op=opp(),g=gid(),W=S.balls[sh],O=S.balls[op],oN=BN(op);
+  const all=plans(sh);
+  const hasShort=o=>o.rl&&(o.rl.type==='short'||(o.rl2&&o.rl2.type==='short'));
+  const score=o=>o.cut+o.travel/80+(o.tp.via?6:0)+(o.kind==='rail2'?10:0)+(g==='gor'&&o.kind!=='dir'?-15:0);
+  const dirs=all.filter(o=>o.kind==='dir').sort((a,b)=>score(a)-score(b));
+  const rails=all.filter(o=>o.kind!=='dir').sort((a,b)=>score(a)-score(b));
+  const cards=[];
+  const describe=(o,label)=>{
+    const best=refine(o);const P=best?best.P:{angle:o.ang,power:o.pow};
+    let type,how=[];
+    if(o.kind==='dir')type=g==='gor'?'Tiro diretto':'Colpo diretto';
+    else if(o.kind==='rail')type=g==='gor'?'Tiro indiretto · punti doppi':'Tiro di sponda';
+    else type=g==='gor'?'Indiretto a due sponde · punti doppi':'Due sponde';
+    if(o.kind!=='dir')how.push('Mira la '+o.rl.name+' al '+diaTxt(o.rl,o.P)+'.');
+    if(o.kind==='rail2')how.push('La tua biglia prende poi la '+o.rl2.name+' al '+diaTxt(o.rl2,o.Q)+'.');
+    how.push('Prendi la '+oN+' con un taglio di circa '+Math.round(o.cut)+'° '+(o.cut<12?'(quasi pieno)':o.cut<35?'(mezza biglia abbondante)':'(fine)')+'.');
+    how.push(o.tp.via?'La '+oN+' tocca la '+o.tp.via.name+' al '+diaTxt(o.tp.via,o.tp.P2)+' e rientra sul castello.':'La '+oN+' va dritta sul birillo rosso.');
+    how.push('Forza '+Math.round(P.power)+', biglia colpita al centro.');
+    let res;
+    if(best&&best.r.to==='me'&&best.r.pts)res='In simulazione: <b>+'+best.r.pts+'</b> ('+best.r.parts.join(', ')+').';
+    else if(best&&best.r.to==='opp')res='In simulazione questo tiro fa bere: '+best.r.text.toLowerCase()+'. Provalo per capire il rischio.';
+    else res='In simulazione il tiro tocca la '+oN+' ma non fa punti: aggiusta forza o taglio.';
+    const man=o.kind==='dir'?(g==='gor'?MANUAL.dirGor:MANUAL.dirIta):(g==='gor'?MANUAL.calcio:(o.kind==='rail2'?MANUAL.dueSponde:MANUAL.railIta));
+    return{h:label,type,how:how.join(' '),res,man,ang:P.angle,pow:P.power,fig:shotSVG(o,simulate({shooter:me(),angle:P.angle,power:P.power,sx:0,sy:0},null,true))};
+  };
+  if(dirs.length)cards.push(describe(dirs[0],'1 · Diretto'));
+  else cards.push({h:'1 · Diretto',type:'Non disponibile',how:'La linea diretta è chiusa da birilli o pallino, oppure il taglio sarebbe troppo fino.',man:g==='gor'?MANUAL.dirGor:MANUAL.dirIta});
+  const railPick=rails[0];
+  if(railPick)cards.push(describe(railPick,'2 · Di sponda'));
+  else cards.push({h:'2 · Di sponda',type:'Non disponibile',how:'Né una né due sponde portano la battente sulla '+oN+' con un taglio giocabile. Prova a cambiare posizione o a giocare di difesa, toccando la '+oN+' piano.',man:g==='gor'?MANUAL.calcio:MANUAL.railIta});
+  const warns=[];
+  const pal=S.balls.r;
+  if(segDist(pal,W,O)<W.r+pal.r+14)warns.push('Il pallino è vicino alla linea di tiro: se lo prendi per primo è fallo, 4 punti di penalità più i punti del tiro all\'avversario.');
+  return{cards,warns};
+}
+/* schema del tiro consigliato: percorsi simulati, punti di sponda e diamanti */
+function shotSVG(o,Q){
+  const m=58,W=PW+2*m,H=PH+2*m,X=x=>(x+m).toFixed(1),Y=y=>(y+m).toFixed(1),sh=me(),op=opp();
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Schema del tiro consigliato">';
+  s+='<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" rx="14" fill="#7f1b1e"/><rect x="'+(m-8)+'" y="'+(m-8)+'" width="'+(PW+16)+'" height="'+(PH+16)+'" fill="#2f8a6b"/><rect x="'+m+'" y="'+m+'" width="'+PW+'" height="'+PH+'" fill="#2e7a62"/>';
+  for(let i=0;i<=8;i++){s+=svgDm(+X(i*DIA),m/2-4,true,9,4,'#f4eedf')+svgDm(+X(i*DIA),H-m/2+4,true,9,4,'#f4eedf');}
+  for(let j=0;j<=4;j++){s+=svgDm(m/2-4,+Y(j*DIA),false,9,4,'#f4eedf')+svgDm(W-m/2+4,+Y(j*DIA),false,9,4,'#f4eedf');}
+  for(const p of S.pins)s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="4" fill="'+(p.t==='red'?'#c23a2c':'#f3ecdc')+'"/>';
+  const path=(pts,c,dash,w)=>pts.length>1?'<polyline points="'+pts.map(q=>X(q[0])+','+Y(q[1])).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-dasharray="'+dash+'" stroke-linejoin="round" stroke-linecap="round"/>':'';
+  for(const k of KEYS)if(k!==sh&&Q.moved[k])s+=path(Q.paths[k],COL(k),'14 8',5);
+  s+=path(Q.paths[sh],'#ffffff','16 9',5);
+  const mark=(P,rl)=>{if(!P)return '';const d=rl.read(P);
+    const lx=rl.axis==='y'?P.x:(rl.id==='lft'?-29:PW+29),ly=rl.axis==='y'?(rl.id==='top'?-20:PH+40):P.y+10;
+    return '<circle cx="'+X(P.x)+'" cy="'+Y(P.y)+'" r="10" fill="none" stroke="#c9a25a" stroke-width="4"/><text x="'+X(lx)+'" y="'+Y(ly)+'" font-size="28" fill="#f3d58f" text-anchor="middle" font-weight="bold" font-family="Georgia,serif">'+fmt(d)+'</text>';};
+  if(o.kind!=='dir')s+=mark(o.P,o.rl);if(o.kind==='rail2')s+=mark(o.Q,o.rl2);
+  if(Q.ev.firstContact)s+='<circle cx="'+X(Q.ev.firstContact.x)+'" cy="'+Y(Q.ev.firstContact.y)+'" r="'+RB.toFixed(1)+'" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="4 4"/>';
+  for(const k of ['r',op,sh]){const b=S.balls[k];s+='<circle cx="'+X(b.x)+'" cy="'+Y(b.y)+'" r="'+b.r.toFixed(1)+'" fill="'+COL(k)+'" stroke="rgba(0,0,0,.5)" stroke-width="1.5"/>';}
+  for(const p of Q.fallen)s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="9" fill="none" stroke="#ffd23f" stroke-width="3"/>';
+  return s+'</svg>';
+}
+function nowLine(){
+  const res=evaluate(simulate(curParams(),null,false).ev);
+  if(res.to==='me')return res.pts?{ok:true,t:'Con la mira attuale: <b>+'+res.pts+'</b> ('+res.parts.join(', ')+').'}:{ok:true,t:'Con la mira attuale il tiro è valido ma non fa punti.'};
+  return{ok:false,t:'Con la mira attuale: '+res.text.toLowerCase()+', '+res.pts+' punti all\'avversario.'};
+}
+function renderTips(){
+  const posKey=[gid(),KEYS.map(k=>Math.round(S.balls[k].x)+','+Math.round(S.balls[k].y)).join()].join('|');
+  if(posKey!==advKey){advKey=posKey;adv=advice();
+    const list=$('tipList');list.innerHTML='';
+    adv.cards.forEach(t=>{const li=document.createElement('li');
+      li.innerHTML='<strong>'+t.h+'</strong><em class="ttype">'+t.type+'</em>'+(t.fig?'<div class="shotfig">'+t.fig+'</div>':'')+'<p>'+t.how+'</p>'+(t.res?'<p class="res">'+t.res+'</p>':'')+'<details class="man"><summary>Dal manuale</summary><p>'+t.man+'</p></details>';
+      if(t.ang!=null){const b=document.createElement('button');b.textContent='Prova questo tiro';b.onclick=()=>{setAngle(t.ang);setPower(t.pow);setSpin(0,0);};li.appendChild(b);}
+      list.appendChild(li);});
+    const wl=$('warnList');wl.innerHTML='';adv.warns.forEach(w=>{const li=document.createElement('li');li.textContent=w;wl.appendChild(li);});
+  }
+  const key=posKey+'|'+[angle,power,sx,sy].join();
+  if(key===tipKey)return;tipKey=key;
+  const n=nowLine();$('nowLine').innerHTML=n.t;$('nowLine').className='now '+(n.ok?'ok':'bad');
+}
+let tipTimer=null;
+function scheduleTips(){if(mode!=='train'||busy())return;clearTimeout(tipTimer);tipTimer=setTimeout(renderTips,160);}
+
+/* ===== disegno in pianta ===== */
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+/* diamante a rombo con il lato lungo rivolto verso il tavolo, come sui biliardi veri */
+function dm(x,y){const longRail=y<RW||y>RW+PH;cx.beginPath();if(longRail){cx.moveTo(x,y-5.5);cx.lineTo(x+2.4,y);cx.lineTo(x,y+5.5);cx.lineTo(x-2.4,y);}else{cx.moveTo(x-5.5,y);cx.lineTo(x,y-2.4);cx.lineTo(x+5.5,y);cx.lineTo(x,y+2.4);}cx.closePath();cx.fill();}
+const svgDm=(x,y,longRail,a,b,c)=>'<polygon points="'+(longRail?[[x,y-a],[x+b,y],[x,y+a],[x-b,y]]:[[x-a,y],[x,y-b],[x+a,y],[x,y+b]]).map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'" fill="'+c+'"/>';
+function drawTable(){
+  const W=cv.width,H=cv.height,c0=RW-CUSH;cx.clearRect(0,0,W,H);
+  /* legno di mogano con giunti a 45° agli angoli */
+  cx.fillStyle='#7f1b1e';rr(0,0,W,H,6);cx.fill();
+  cx.strokeStyle='rgba(255,190,170,.18)';cx.lineWidth=1.2;cx.strokeRect(2.5,2.5,W-5,H-5);
+  cx.strokeStyle='rgba(0,0,0,.45)';cx.lineWidth=1.2;cx.beginPath();
+  for(const [ax,ay,bx,by] of [[0,0,c0,c0],[W,0,W-c0,c0],[0,H,c0,H-c0],[W,H,W-c0,H-c0]]){cx.moveTo(ax,ay);cx.lineTo(bx,by);}cx.stroke();
+  /* gomma delle sponde, rivestita di panno */
+  cx.fillStyle='#2f8a6b';cx.fillRect(c0,c0,PW+2*CUSH,PH+2*CUSH);
+  cx.strokeStyle='rgba(0,0,0,.35)';cx.lineWidth=1;cx.beginPath();
+  for(const [ax,ay,bx,by] of [[c0,c0,RW,RW],[W-c0,c0,W-RW,RW],[c0,H-c0,RW,H-RW],[W-c0,H-c0,W-RW,H-RW]]){cx.moveTo(ax,ay);cx.lineTo(bx,by);}cx.stroke();
+  cx.fillStyle='#2e7a62';cx.fillRect(RW,RW,PW,PH);
+  cx.strokeStyle='#4fae8a';cx.lineWidth=1.5;cx.strokeRect(RW-0.75,RW-0.75,PW+1.5,PH+1.5);
+  /* mezzeria e bollini */
+  cx.strokeStyle='rgba(255,255,255,.07)';cx.lineWidth=1;cx.beginPath();cx.moveTo(RW+PW/2,RW);cx.lineTo(RW+PW/2,RW+PH);cx.stroke();
+  cx.fillStyle='rgba(255,255,255,.35)';for(const [x,y] of [[PW*0.25,PH/2],[PW*0.75,PH/2],[SPOT,PH/2],[PW-SPOT,PH/2]]){cx.beginPath();cx.arc(RW+x,RW+y,1.5,0,7);cx.fill();}
+  /* diamanti: 9 sulle lunghe e 5 sulle corte, a 1/8 del piano, angoli compresi, al centro del legno */
+  const dy=c0/2;cx.fillStyle='#f4eedf';
+  for(let i=0;i<=8;i++){dm(RW+i*DIA,dy);dm(RW+i*DIA,H-dy);}
+  for(let j=0;j<=4;j++){dm(dy,RW+j*DIA);dm(W-dy,RW+j*DIA);}
+}
+function drawPins(){for(const p of S.pins){if(!p.up)continue;cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.arc(p.x+1.6,p.y+1.6,2.9,0,7);cx.fill();
+  cx.fillStyle=p.t==='red'?'#c23a2c':'#f3ecdc';cx.beginPath();cx.arc(p.x,p.y,2.9,0,7);cx.fill();cx.strokeStyle='rgba(0,0,0,.45)';cx.lineWidth=0.8;cx.stroke();}}
+function drawBall(k){const b=S.balls[k],r=b.r;cx.fillStyle='rgba(0,0,0,.28)';cx.beginPath();cx.arc(b.x+2.5,b.y+3.5,r,0,7);cx.fill();
+  cx.fillStyle=COL(k);cx.beginPath();cx.arc(b.x,b.y,r,0,7);cx.fill();cx.strokeStyle='rgba(0,0,0,.35)';cx.lineWidth=1;cx.stroke();
+  cx.fillStyle='rgba(255,255,255,.5)';cx.beginPath();cx.arc(b.x-r*0.35,b.y-r*0.35,r*0.28,0,7);cx.fill();}
+function drawCue(pull){
+  const b=S.balls[me()],a=angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),px=-dy,py=dx,off=sx*b.r*0.8;
+  const g=b.r+4+pull,L=620,ox=b.x+px*off,oy=b.y+py*off;
+  const t0={x:ox-dx*g,y:oy-dy*g},t1={x:ox-dx*(g+L),y:oy-dy*(g+L)};
+  const poly=(s,e,w0,w1,c)=>{cx.fillStyle=c;cx.beginPath();cx.moveTo(s.x+px*w0,s.y+py*w0);cx.lineTo(e.x+px*w1,e.y+py*w1);cx.lineTo(e.x-px*w1,e.y-py*w1);cx.lineTo(s.x-px*w0,s.y-py*w0);cx.closePath();cx.fill();};
+  const at=f=>({x:t0.x+(t1.x-t0.x)*f,y:t0.y+(t1.y-t0.y)*f});
+  cx.save();cx.globalAlpha=.25;cx.translate(5,7);poly(t0,t1,3.5,9,'#000');cx.restore();
+  poly(t0,at(.015),3.3,3.5,'#3b6fb6');poly(at(.015),at(.035),3.5,3.6,'#f2efe6');
+  poly(at(.035),at(.62),3.6,6.5,'#dcc08e');poly(at(.62),at(.645),6.5,6.7,'#c9a25a');poly(at(.645),at(.8),6.7,7.6,'#4a1a10');poly(at(.8),at(.81),7.6,7.7,'#c9a25a');poly(at(.81),t1,7.7,9,'#1a0f0b');
+}
+function getPred(){const P=curParams(),key=[S.game,P.shooter,angle,power,sx,sy,KEYS.map(k=>S.balls[k].x+','+S.balls[k].y).join()].join('|');
+  if(key!==predKey){pred=simulate(P,null,true);predKey=key;}return pred;}
+function drawPred(){
+  const Q=getPred(),sh=me();
+  const line=(pts,color,w,dash,alpha)=>{if(pts.length<2)return;cx.save();cx.globalAlpha=alpha;cx.strokeStyle=color;cx.lineWidth=w;cx.setLineDash(dash);cx.lineJoin='round';cx.beginPath();pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke();cx.restore();};
+  line(Q.paths[sh],'#ffffff',2.4,[10,8],.8);
+  for(const k of KEYS){if(k===sh||!Q.moved[k])continue;line(Q.paths[k],COL(k)==='#2f5bbf'?'#7fa4ff':COL(k),3,[6,6],.95);}
+  if(Q.ev.firstContact){const q=Q.ev.firstContact;cx.save();cx.strokeStyle='rgba(255,255,255,.9)';cx.lineWidth=2;cx.beginPath();cx.arc(q.x,q.y,RB,0,7);cx.stroke();cx.restore();}
+  for(const k of KEYS){if(!Q.moved[k])continue;const f=Q.st.balls[k];cx.save();cx.globalAlpha=.5;cx.strokeStyle=COL(k);cx.lineWidth=2;cx.setLineDash([3,3]);cx.beginPath();cx.arc(f.x,f.y,f.r,0,7);cx.stroke();cx.restore();}
+  for(const p of Q.fallen){cx.save();cx.strokeStyle='#ffd23f';cx.lineWidth=2;cx.beginPath();cx.arc(p.x,p.y,7,0,7);cx.stroke();cx.restore();}
+}
+function baseRay(){
+  const S0=me(),b=S.balls[S0],a=angle*Math.PI/180,d={x:Math.cos(a),y:Math.sin(a)},r=b.r;
+  let t=Infinity;
+  if(d.x>1e-9)t=Math.min(t,(PW-r-b.x)/d.x);if(d.x<-1e-9)t=Math.min(t,(r-b.x)/d.x);
+  if(d.y>1e-9)t=Math.min(t,(PH-r-b.y)/d.y);if(d.y<-1e-9)t=Math.min(t,(r-b.y)/d.y);
+  let hit=null;
+  for(const k of KEYS){if(k===S0)continue;const o=S.balls[k],rs=r+o.r,fx=b.x-o.x,fy=b.y-o.y,bb=fx*d.x+fy*d.y,cc=fx*fx+fy*fy-rs*rs,disc=bb*bb-cc;
+    if(disc>=0){const tt=-bb-Math.sqrt(disc);if(tt>0&&tt<t){t=tt;hit=k;}}}
+  return{q:{x:b.x+d.x*t,y:b.y+d.y*t},hit};
+}
+function drawBase(){
+  const b=S.balls[me()],{q,hit}=baseRay();
+  cx.save();cx.setLineDash([9,8]);cx.lineWidth=2.2;cx.strokeStyle='rgba(243,236,220,.8)';
+  cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(q.x,q.y);cx.stroke();
+  cx.setLineDash([]);cx.lineWidth=2;cx.strokeStyle=hit?COL(hit):'rgba(243,236,220,.9)';
+  cx.beginPath();cx.arc(q.x,q.y,b.r,0,7);cx.stroke();cx.restore();
+}
+let last=performance.now(),lastTipSig='',pullNow=0;
+const showCue=()=>!moving&&!(mode==='match'&&(!match||match.over))&&mode!=='school';
+const humanAim=()=>!busy()&&!isCpuTurn()&&!(mode==='match'&&(!match||match.over));
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(S&&mode!=='school'){
+    if(moving){acc+=dt;while(acc>=DT&&moving){step(S);acc-=DT;if(still(S)){stopAll(S);settle();}}}else acc=0;
+    const pre=10+power*0.6;pullNow=pre;
+    if(!moving&&cueAnim){cueAnim.t+=dt;const t=cueAnim.t;
+      if(t<0.22)pullNow=pre+t/0.22*40;else if(t<0.3)pullNow=(pre+40)*(1-(t-0.22)/0.08);else{cueAnim=null;pullNow=0;strike();}}
+    if(mode==='train'&&!busy()){const sig=[S.game,KEYS.map(k=>S.balls[k].x+','+S.balls[k].y).join(),angle,power,sx,sy].join('|');if(sig!==lastTipSig){lastTipSig=sig;scheduleTips();}}
+    if(view==='3d'&&V3.ok)render3D();else draw2D();
+  }
+  requestAnimationFrame(frame);
+}
+function draw2D(){
+  cx.setTransform(1,0,0,1,0,0);drawTable();cx.translate(RW,RW);if(!S)return;
+  if(inHand&&!busy()&&mode==='match'){const h=allowedHalf();cx.save();cx.fillStyle='rgba(201,162,90,.10)';cx.fillRect(h?PW/2:0,0,PW/2,PH);
+    cx.setLineDash([8,8]);cx.strokeStyle='rgba(201,162,90,.7)';cx.lineWidth=2;cx.beginPath();cx.moveTo(PW/2,0);cx.lineTo(PW/2,PH);cx.stroke();
+    cx.setLineDash([]);const b=S.balls[inHand.me];cx.beginPath();cx.arc(b.x,b.y,b.r+6,0,7);cx.stroke();cx.restore();}
+  drawPins();
+  if(humanAim()){if($('hFull').checked)drawPred();else if($('hBase').checked)drawBase();}
+  ['r','y','w'].forEach(drawBall);
+  if(showCue())drawCue(pullNow);
+}
+
+/* ===== vista giocatore 3D ===== */
+let view='plan';const V3={ok:false};
+function P3(x,y,h){return new THREE.Vector3(x-PW/2,h||0,y-PH/2);}
+function init3D(){
+  if(V3.ok)return true;if(!window.THREE)return false;
+  const T=THREE,el=$('v3');
+  let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){return false;}
+  r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;r.outputEncoding=T.sRGBEncoding;
+  Object.assign(r.domElement.style,{width:'100%',height:'100%',display:'block',touchAction:'none'});el.appendChild(r.domElement);
+  const sc=new T.Scene();sc.background=new T.Color(0x150e0b);sc.fog=new T.Fog(0x150e0b,1600,3400);
+  const cam=new T.PerspectiveCamera(50,1.6,1,6000);
+  sc.add(new T.HemisphereLight(0xfff0dc,0x2a170e,0.55));
+  const lin=c=>new T.Color(c).convertSRGBToLinear();
+  const std=(c,ro,me)=>new T.MeshStandardMaterial({color:lin(c),roughness:ro==null?.8:ro,metalness:me||0});
+  const lamps=[];
+  for(const x of[-260,260]){
+    const L=new T.SpotLight(0xffe2b0,1.1,0,0.95,0.55,1);L.position.set(x,600,0);L.target.position.set(x*0.5,0,0);
+    L.castShadow=true;L.shadow.mapSize.set(1024,1024);L.shadow.bias=-0.0006;sc.add(L);sc.add(L.target);
+    const shade=new T.Mesh(new T.ConeGeometry(110,70,32,1,true),new T.MeshStandardMaterial({color:lin(0x1f4a33),side:T.DoubleSide,roughness:.55,metalness:.25}));shade.position.set(x,620,0);sc.add(shade);lamps.push(shade);
+    const bulb=new T.Mesh(new T.SphereGeometry(18,16,12),new T.MeshBasicMaterial({color:0xfff2cc}));bulb.position.set(x,595,0);sc.add(bulb);lamps.push(bulb);
+    const rod=new T.Mesh(new T.CylinderGeometry(2,2,600,8),std(0xc9a25a,.3,.8));rod.position.set(x,955,0);sc.add(rod);lamps.push(rod);
+  }
+  const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;sc.add(o);return o;};
+  const felt=new T.Mesh(new T.PlaneGeometry(PW+60,PH+60),std(0x1f5f4b,.95));felt.rotation.x=-Math.PI/2;felt.receiveShadow=true;sc.add(felt);
+  /* sponde regolamentari: becco a 37 mm, larghezza totale 14,5 cm */
+  const CU=CUSH,CH=37/MM,FW=WOOD,FH=CH+12,TOP=CH+2,cush=std(0x246f59,.9),wood=std(0x5a1114,.45,.05),woodDk=std(0x2b130c,.6),brass=std(0xe6d3a3,.35,.4);
+  for(const s of[-1,1]){
+    box(PW+2*CU,CH,CU,cush,0,CH/2,s*(PH/2+CU/2));box(CU,CH,PH,cush,s*(PW/2+CU/2),CH/2,0);
+    box(PW+2*CU+2*FW,FH,FW,wood,0,TOP-FH/2,s*(PH/2+CU+FW/2));box(FW,FH,PH+2*CU,wood,s*(PW/2+CU+FW/2),TOP-FH/2,0);
+  }
+  const dg=new T.CylinderGeometry(5.5,5.5,1,4);
+  for(let i=0;i<=8;i++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(-PW/2+i*DIA,TOP+0.5,s*(PH/2+CU+FW/2));d.scale.set(0.45,1,1);sc.add(d);}
+  for(let j=0;j<=4;j++)for(const s of[-1,1]){const d=new T.Mesh(dg,brass);d.position.set(s*(PW/2+CU+FW/2),TOP+0.5,-PH/2+j*DIA);d.scale.set(1,1,0.45);sc.add(d);}
+  box(PW+2*CU+2*FW,110,PH+2*CU+2*FW,woodDk,0,TOP-FH-55,0);
+  for(const a of[-1,1])for(const b of[-1,1])box(70,330,70,woodDk,a*(PW/2+CU+FW-40),TOP-FH-110-165,b*(PH/2+CU+FW-40));
+  const floor=new T.Mesh(new T.PlaneGeometry(8000,8000),std(0x24150e,.9));floor.rotation.x=-Math.PI/2;floor.position.y=TOP-FH-440;floor.receiveShadow=true;sc.add(floor);
+  const balls={},bg=new T.SphereGeometry(RB,32,24);
+  for(const k of KEYS){const m=new T.Mesh(bg,new T.MeshStandardMaterial({color:0xffffff,roughness:.18,metalness:.02}));m.castShadow=true;sc.add(m);balls[k]=m;}
+  /* birillo: alto 25 mm, base 10 mm, testa 6-7 mm */
+  const prof=[[0,0],[5,0],[5,1.2],[4.4,5],[2.8,11],[2.5,14],[3.3,18],[3.4,21],[2.3,24.3],[0,25]].map(p=>new T.Vector2(p[0]/MM,p[1]/MM));
+  const pg=new T.LatheGeometry(prof,18),pmW=std(0xf3ecdc,.35),pmR=std(0xc23a2c,.35);
+  const pins=[];for(let i=0;i<9;i++){const m=new T.Mesh(pg,pmW);m.castShadow=true;sc.add(m);pins.push(m);}
+  const cue=new T.Group();let z=0;
+  for(const [len,r0,r1,c,ro,me] of [[5,3.2,3.3,0x3b6fb6,.9],[12,3.3,3.4,0xf2efe6,.4],[360,3.4,5.8,0xdcc08e,.45],[8,5.8,6,0xc9a25a,.3,.8],[120,6,7,0x4a1a10,.35],[4,7,7.1,0xc9a25a,.3,.8],[111,7.1,8.6,0x1a0f0b,.4]]){
+    const g=new T.CylinderGeometry(r1,r0,len,20);g.rotateX(Math.PI/2);const m=new T.Mesh(g,std(c,ro,me));m.position.z=z+len/2;m.castShadow=true;cue.add(m);z+=len;}
+  sc.add(cue);
+  const hints=new T.Group();sc.add(hints);
+  Object.assign(V3,{ok:true,lamps,T,r,sc,cam,balls,pins,pmW,pmR,cue,hints,el,lin,pos:new T.Vector3(),look:new T.Vector3(),snap:true,hintKey:'',game:''});
+  const rs=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();};
+  rs();if(window.ResizeObserver)new ResizeObserver(rs).observe(el);else window.addEventListener('resize',rs);
+  let drag=null;const pts=new Map();let pinch=null;
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:zoom3D};drag=null;return;}
+    if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;drag={x:e.clientX,a:angle};});
+  el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];setZoom(pinch.z+(Math.hypot(a.x-b.x,a.y-b.y)/pinch.d-1)*0.9);return;}
+    if(drag)setAngle(drag.a+(e.clientX-drag.x)*0.15);});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(!pts.size)drag=null;};
+  el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+  el.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom3D-e.deltaY*0.0012);},{passive:false});
+  return true;
+}
+function clearHints3D(){const g=V3.hints;while(g.children.length){const c=g.children.pop();c.geometry&&c.geometry.dispose();c.material&&c.material.dispose();}}
+function dots3D(pts,color,spacing,opacity){
+  const T=V3.T,out=[];let carry=0;
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]);let t=carry;
+    while(t<=L){out.push([a[0]+(b[0]-a[0])*t/L,a[1]+(b[1]-a[1])*t/L]);t+=spacing;}carry=t-L;}
+  if(!out.length)return;
+  const g=new T.CircleGeometry(2.1,10);g.rotateX(-Math.PI/2);
+  const m=new T.InstancedMesh(g,new T.MeshBasicMaterial({color,transparent:true,opacity:opacity||.9}),out.length);
+  const o=new T.Object3D();out.forEach((p,i)=>{o.position.copy(P3(p[0],p[1],0.8));o.updateMatrix();m.setMatrixAt(i,o.matrix);});V3.hints.add(m);
+}
+function ring3D(x,y,r0,r1,color,h){const T=V3.T,g=new T.RingGeometry(r0,r1,32);g.rotateX(-Math.PI/2);const m=new T.Mesh(g,new T.MeshBasicMaterial({color,transparent:true,opacity:.9}));m.position.copy(P3(x,y,h||0.9));V3.hints.add(m);}
+const hex=c=>new THREE.Color(c).getHex();
+function hints3D(){
+  let key='none';const full=$('hFull').checked,base=$('hBase').checked;
+  if(humanAim()&&(full||base)){
+    if(full){getPred();key='F'+predKey;}else key='B'+[S.game,angle,KEYS.map(k=>S.balls[k].x+','+S.balls[k].y).join()].join('|');
+  }
+  if(key===V3.hintKey)return;V3.hintKey=key;clearHints3D();if(key==='none')return;
+  if(full){const Q=pred,sh=me();
+    dots3D(Q.paths[sh],0xffffff,12,.85);
+    for(const k of KEYS){if(k!==sh&&Q.moved[k])dots3D(Q.paths[k],hex(COL(k)),10,.95);}
+    if(Q.ev.firstContact)ring3D(Q.ev.firstContact.x,Q.ev.firstContact.y,RB-1.5,RB+0.5,0xffffff);
+    for(const k of KEYS){if(Q.moved[k]){const f=Q.st.balls[k];ring3D(f.x,f.y,f.r-1,f.r+0.8,hex(COL(k)));}}
+    for(const p of Q.fallen)ring3D(p.x,p.y,4.5,6.5,0xffd23f,0.7);
+  }else{const b=baseRay(),s=S.balls[me()];dots3D([[s.x,s.y],[b.q.x,b.q.y]],0xf3ecdc,12,.85);ring3D(b.q.x,b.q.y,s.r-1.5,s.r+0.5,b.hit?hex(COL(b.hit)):0xf3ecdc);}
+}
+function render3D(){
+  const T=V3.T;
+  if(V3.game!==S.game){V3.game=S.game;for(const k of KEYS){V3.balls[k].material.color=V3.lin(COL(k));const s=S.balls[k].r/RB;V3.balls[k].scale.set(s,s,s);}V3.hintKey='';}
+  for(const k of KEYS){const b=S.balls[k];V3.balls[k].position.set(b.x-PW/2,b.r,b.y-PH/2);}
+  V3.pins.forEach((m,i)=>{const p=S.pins[i];if(!p){m.visible=false;return;}m.visible=p.up;m.position.set(p.x-PW/2,0,p.y-PH/2);m.material=p.t==='red'?V3.pmR:V3.pmW;});
+  const b=S.balls[me()],a=angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a);
+  V3.cue.visible=showCue();
+  if(V3.cue.visible){const e=6*Math.PI/180,g=b.r+4+pullNow,off=sx*b.r*0.8;
+    const tip=P3(b.x-dx*g*Math.cos(e)-dy*off,b.y-dy*g*Math.cos(e)+dx*off,b.r+sy*b.r*0.6+g*Math.sin(e));
+    V3.cue.position.copy(tip);V3.cue.lookAt(tip.x-dx*Math.cos(e),tip.y+Math.sin(e),tip.z-dy*Math.cos(e));}
+  const now=performance.now();
+  if(!moving){const key=[angle,b.x,b.y,V3.cam.aspect,zoom3D].join('|');if(key!==V3.aimKey){V3.aimKey=key;const f=aimPose(b,dx,dy);V3.aimPos=f.pos;V3.aimLook=f.look;}V3.standPos=null;}
+  else{V3.lastMove=now;if(!V3.standPos){const f=standPose(b,dx,dy);V3.standPos=f.pos;V3.standLook=f.look;}}
+  const tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
+  const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
+  if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,k);V3.look.lerp(tl,k);}
+  /* la camera non deve mai finire dentro o sotto la stecca: resta sempre sopra la sua linea */
+  if(V3.cue.visible){const bx=b.x-PW/2,bz=b.y-PH/2,d=-((V3.pos.x-bx)*dx+(V3.pos.z-bz)*dy),lat=Math.abs((V3.pos.x-bx)*(-dy)+(V3.pos.z-bz)*dx);
+    if(d>0&&d<b.r+4+pullNow+640&&lat<40){const cueH=b.r+(d)*Math.tan(6*Math.PI/180)+12;if(V3.pos.y<cueH+30)V3.pos.y=cueH+30;}}
+  V3.cam.position.copy(V3.pos);V3.cam.lookAt(V3.look);
+  const showLamps=V3.pos.y<430;V3.lamps.forEach(m=>m.visible=showLamps);
+  hints3D();
+  V3.r.render(V3.sc,V3.cam);
+}
+function fitPose(look,ux,uz,k,dmin){
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const ex=PW/2+40,ez=PH/2+40,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let d=dmin;
+  for(let i=0;i<60;i++){
+    c.position.set(look.x-ux*d,d*k,look.z-uz*d);c.lookAt(look);c.updateMatrixWorld();
+    if(cs.every(([x,z])=>{v.set(x,0,z).project(c);return v.z<1&&Math.abs(v.x)<0.97&&Math.abs(v.y)<0.94;}))break;
+    d+=35;}
+  return{pos:c.position.clone(),look:look.clone()};
+}
+/* dove sta in piedi chi tira: dietro la biglia, appena fuori dal bordo del tavolo */
+function standSpot(b,dx,dy){
+  const ex=PW/2+RW+45,ez=PH/2+RW+45;let t=60;
+  for(;t<900;t+=10){const x=b.x-dx*t-PW/2,z=b.y-dy*t-PH/2;if(Math.abs(x)>ex||Math.abs(z)>ez)break;}
+  return{x:b.x-dx*Math.min(t,Math.max(120,t)),y:b.y-dy*Math.min(t,Math.max(120,t))};
+}
+/* sale in verticale finché vede tutto il tavolo, senza allontanarsi */
+function fitHeight(hx,hz,look,h0){
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const ex=PW/2+30,ez=PH/2+30,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let h=h0;
+  for(let i=0;i<80;i++){c.position.set(hx,h,hz);c.lookAt(look);c.updateMatrixWorld();
+    if(cs.every(([x,z])=>{v.set(x,0,z).project(c);return v.z<1&&Math.abs(v.x)<0.97&&Math.abs(v.y)<0.95;}))break;h+=25;}
+  return{pos:c.position.clone(),look:look.clone()};
+}
+function aimPose(b,dx,dy){
+  const st=standSpot(b,dx,dy),lk0=P3((b.x+dx*220+PW/2)/2,(b.y+dy*220+PH/2)/2,0);
+  const far=fitHeight(st.x-PW/2,st.y-PH/2,lk0,180);
+  const near={pos:P3(b.x-dx*210,b.y-dy*210,60),look:P3(b.x+dx*300,b.y+dy*300,0)};
+  const z=zoom3D,pos=far.pos.clone().lerp(near.pos,z),look=far.look.clone().lerp(near.look,z);
+  /* la stecca deve restare in quadro: se il tratto vicino alla biglia esce dal basso, l'inquadratura si inclina verso la biglia */
+  const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const bp=P3(b.x,b.y,b.r),q=new T.Vector3(),tgt=P3(b.x-dx*110,b.y-dy*110,b.r+110*Math.tan(6*Math.PI/180));
+  const cueH=b.r+Math.max(0,-((pos.x-(b.x-PW/2))*dx+(pos.z-(b.y-PH/2))*dy))*Math.tan(6*Math.PI/180)+42;if(pos.y<cueH)pos.y=cueH;
+  for(let i=0;i<14;i++){c.position.copy(pos);c.lookAt(look);c.updateMatrixWorld();q.copy(tgt).project(c);if(q.z<1&&q.y>-0.88)break;look.lerp(bp,0.18);}
+  return{pos,look};
+}
+let zoom3D=0.55;try{const zz=parseFloat(localStorage.getItem('mg-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
+function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';try{localStorage.setItem('mg-zoom',String(zoom3D));}catch(e){}}
+function standPose(b,dx,dy){
+  const st=standSpot(b,dx,dy);return fitHeight(st.x-PW/2,st.y-PH/2,new V3.T.Vector3(0,0,0),260);
+}
+function setView(v){
+  if(v==='3d'&&!init3D()){msg('La vista giocatore non è disponibile su questo dispositivo.');v='plan';}
+  view=v;$('vPlan').setAttribute('aria-pressed',String(v==='plan'));$('vPlayer').setAttribute('aria-pressed',String(v==='3d'));
+  $('cv').hidden=v==='3d';$('v3').hidden=v!=='3d';$('zoomBox').hidden=v!=='3d';
+  if(v==='3d'){V3.snap=true;V3.hintKey='';V3.game='';window.dispatchEvent(new Event('resize'));
+    if(inHand||mode==='train')msg(mode==='train'?'Vista giocatore: trascina a destra o sinistra per mirare, usa + e − (o due dita) per avvicinarti. Per spostare le biglie torna alla pianta.':'Per posizionare la biglia in mano torna alla vista in pianta.');}
+  try{localStorage.setItem('mg-view',v);}catch(e){}
+}
+$('zIn').onclick=()=>setZoom(zoom3D+0.15);$('zOut').onclick=()=>setZoom(zoom3D-0.15);
+$('vPlan').onclick=()=>setView('plan');$('vPlayer').onclick=()=>setView('3d');
+
+/* ===== regole in breve (riusate in pagina e nella scuola) ===== */
+const RULES={
+  gor:'<h4>Goriziana · 9 birilli <small>regolamento FIBIS, stecca</small></h4><ul>'+
+    '<li>Tre bilie da 61 mm: bianca, gialla e pallino rosso. Nove birilli in croce con interasse di 66 mm.</li>'+
+    '<li>Apertura: gialla sul bollino a 10 cm dalla sponda corta del quadrato superiore, pallino al centro dello stesso quadrato; la bianca apre dal quadrato inferiore.</li>'+
+    '<li>Birilli: esterni 2, interni 8, rosso 10 con altri o 30 da solo, anche a castello incompleto (art. 30).</li>'+
+    '<li>Pallino: sempre 6 punti, toccato dalla bilia avversaria o dalla tua dopo averla colpita (art. 31).</li>'+
+    '<li>Tiro indiretto: se la tua bilia tocca almeno una sponda prima dell\'avversaria, birilli e pallino raddoppiano (art. 29).</li>'+
+    '<li>Falli (art. 24): bilia avversaria mancata 2, pallino colpito per primo 4, birilli abbattuti prima dell\'avversaria 2. All\'avversario vanno penalità e punti del tiro, con bilia libera. La penalità non raddoppia mai.</li>'+
+    '<li>Se la tua bilia abbatte birilli dopo aver colpito l\'avversaria, i punti vanno all\'avversario ma senza bilia libera. Se un tiro fa punti positivi e negativi insieme, va tutto all\'avversario.</li>'+
+    '<li>Bilia libera: si piazza nel quadrato opposto alla bilia del fallo; chi batte può far mettere l\'avversaria sul bollino di partenza.</li></ul>',
+  ita:'<h4>Italiana · 5 birilli <small>regolamento FIBIS, stecca</small></h4><ul>'+
+    '<li>Tre bilie da 61 mm: bianca, gialla e il pallino rosso. Birilli a croce con interasse di 66 mm.</li>'+
+    '<li>Apertura: gialla sul bollino a 10 cm dalla sponda corta del quadrato superiore, pallino al centro dello stesso quadrato; la bianca apre dal quadrato inferiore.</li>'+
+    '<li>Birilli bianchi 2 punti, rosso 4 con altri o 10 da solo. Niente raddoppio di sponda.</li>'+
+    '<li>Pallino: 4 se lo tocca la tua bilia dopo l\'avversaria, 3 se lo tocca l\'avversaria. Conta la prima che lo tocca.</li>'+
+    '<li>Falli con bilia libera: bilia avversaria mancata (2), pallino colpito per primo (4), birilli abbattuti prima dell\'avversaria (2). All\'avversario vanno penalità, punti del tiro e pallino a 2.</li>'+
+    '<li>Se la tua bilia abbatte birilli dopo aver colpito l\'avversaria, perdi i punti ma non c\'è bilia libera.</li>'+
+    '<li>Bilia libera: si piazza nel quadrato opposto alla bilia del fallo; chi batte può far mettere l\'avversaria sul bollino di partenza.</li></ul>'
+};
+function renderRules(){$('rulesNow').innerHTML=RULES[gid()];$('rulesSum').textContent='Regole: '+GM().full;}
+
+/* ===== scuola: schemi dai manuali ===== */
+function tbl(ox,oy,s,inner,o){o=o||{};
+  const w=8*s,h=4*s;let svg='<rect x="'+(ox-9)+'" y="'+(oy-9)+'" width="'+(w+18)+'" height="'+(h+18)+'" rx="6" fill="#7f1b1e"/><rect x="'+ox+'" y="'+oy+'" width="'+w+'" height="'+h+'" fill="#2e7a62"/>';
+  for(let i=0;i<=8;i++)svg+=svgDm(ox+i*s,oy-4.5,true,2.6,1.1,'#f4eedf')+svgDm(ox+i*s,oy+h+4.5,true,2.6,1.1,'#f4eedf');
+  for(let j=0;j<=4;j++)svg+=svgDm(ox-4.5,oy+j*s,false,2.6,1.1,'#f4eedf')+svgDm(ox+w+4.5,oy+j*s,false,2.6,1.1,'#f4eedf');
+  if(o.castle){const c=[ox+4*s,oy+2*s],d=s*0.19;svg+='<g fill="#f3ecdc">';for(const [a,b] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]].slice(0,o.castle))svg+='<circle cx="'+(c[0]+a*d)+'" cy="'+(c[1]+b*d)+'" r="1.6" '+(a||b?'':'fill="#c23a2c"')+'/>';svg+='</g>';}
+  return svg+inner;
+}
+const SV=(vb,body,label)=>'<svg viewBox="'+vb+'" role="img" aria-label="'+label+'">'+body+'</svg>';
+const ln=(a,b,c,dash,w)=>'<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+(c||'#c9a25a')+'" stroke-width="'+(w||1.6)+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round"/>';
+const pl=(pts,c,dash,w)=>'<polyline points="'+pts.map(p=>p.join(',')).join(' ')+'" fill="none" stroke="'+(c||'#c9a25a')+'" stroke-width="'+(w||1.6)+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linejoin="round" stroke-linecap="round"/>';
+const bl=(p,c,r)=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(r||4)+'" fill="'+(c||'#f3ecdc')+'" stroke="rgba(0,0,0,.4)" stroke-width=".6"/>';
+const tx=(p,t,o)=>{o=o||{};return '<text x="'+p[0]+'" y="'+p[1]+'" font-size="'+(o.s||9)+'" fill="'+(o.c||'#e8dcc2')+'" text-anchor="'+(o.a||'middle')+'" font-family="EB Garamond,Georgia,serif"'+(o.i?' font-style="italic"':'')+'>'+t+'</text>';};
+function schoolCards(){
+  const s=30,ox=22,oy=24;const P=(dx,dy,yo)=>[ox+dx*s,(yo==null?oy:yo)+dy*s];
+  const cards=[];
+  /* 1 diamanti */
+  {let b=tbl(ox,oy,s,'');for(let i=0;i<=8;i++)b+=tx([ox+i*s,oy-13],i,{s:8});for(let j=0;j<=4;j++)b+=tx([ox-15,oy+j*s+3],j,{s:8});
+   b+=ln(P(3,0),P(3,4),'#c9a25a','2 3',1);b+=ln(P(3,4),P(3.1,4),'#c9a25a');b+=tx(P(3.5,2.1),'1 diamante = 35,5 cm',{s:8.5});b+=tx(P(3.5,2.6),'1 punto = 3,55 cm',{s:8.5,i:1});
+   cards.push({t:'Diamanti, punti e misure',src:'FIBIS art. 2 · Margutti, lezione 1',svg:SV('0 0 286 160',b,'Tavolo con i diamanti numerati da 0 a 8 e da 0 a 4'),
+    p:'Il piano regolamentare misura 2,84 × 1,42 m e i diamanti stanno a 1/8 della lunghezza, cioè 35,5 cm l\'uno dall\'altro. Margutti ragiona in <b>punti</b>: un punto è 1/10 di diamante, 3,55 cm, circa due dita. Una biglia misura 61 mm, quasi due punti: per questo nessun conteggio è perfetto e serve a capire il tiro, non a sostituire la sensibilità. In questa app le sponde lunghe si leggono da 0 a 8 da sinistra, le corte da 0 a 4 dall\'alto, sempre in perpendicolare dal diamante.'});}
+  /* 2 specchio */
+  {const yo=64,S0=P(1.2,1.5,yo),A=P(6.2,1.5,yo),M=P(3.7,0,yo),Am=[A[0],yo-1.5*s];
+   let b='<rect x="'+(ox-9)+'" y="'+(yo-9)+'" width="258" height="138" rx="6" fill="#7f1b1e"/><rect x="'+ox+'" y="'+yo+'" width="240" height="120" fill="#2e7a62"/>';
+   b+=ln([ox-9,yo],[ox+249,yo],'#e6d3a3','',1);
+   b+=pl([S0,M,A],'#f3ecdc','',1.8)+ln(M,Am,'#c9a25a','4 3')+ln(A,Am,'#c9a25a','1 3',1)+ln(M,[M[0],yo+60],'#c9a25a','2 3',1)+bl(S0)+bl(A,'#b3262a')+'<circle cx="'+Am[0]+'" cy="'+Am[1]+'" r="4" fill="none" stroke="#c9a25a" stroke-dasharray="2 2"/>';
+   b+=tx([Am[0]+6,Am[1]-6],'punto speculare',{s:8.5,a:'start',i:1})+tx([M[0],yo+72],'altezza = bisettrice',{s:8,i:1})+tx([S0[0],S0[1]+16],'partenza',{s:8})+tx([A[0],A[1]+16],'arrivo',{s:8});
+   cards.push({t:'Lo specchio: il triangolo isoscele',src:'Margutti, lezione 1',svg:SV('0 0 286 196',b,'Traiettoria a una sponda con il punto speculare oltre la sponda'),
+    p:'Se la biglia fosse un punto senza rotazione, uscirebbe dalla sponda con lo stesso angolo con cui è entrata, come la luce in uno specchio. Partenza e arrivo sono la base di un triangolo isoscele: si mira a metà della base. Prolungando tutte le traiettorie che arrivano nello stesso punto, si incontrano nel suo <b>punto speculare</b> oltre la sponda. Da qui la frase di Margutti: le traiettorie sul biliardo vanno cercate fuori dal biliardo. È il motivo per cui c\'è chi mira un gessetto o un segno sul muro.'});}
+  /* 3 fisica della sponda */
+  {const R0=[40,30],I=[150,30];let b='<rect x="20" y="16" width="250" height="10" fill="#2f8a6b"/><rect x="20" y="6" width="250" height="10" fill="#7f1b1e"/><rect x="20" y="26" width="250" height="130" fill="#2e7a62"/>';
+   b+=ln([60,140],I,'#f3ecdc','',1.8)+ln(I,[240,140],'#e8dcc2','4 3',1.2)+pl([I,[205,80],[226,140]],'#6fbf8f','',1.6)+pl([I,[200,74],[212,140]],'#dfae3a','',1.6)+pl([I,[196,70],[196,140]],'#e06d5b','',1.6);
+   b+=tx([248,150],'geometria',{s:8,i:1})+tx([226,152],'battuto',{s:8,c:'#6fbf8f'})+tx([206,128],'semi',{s:8,c:'#dfae3a',a:'end'})+tx([188,148],'nuovo',{s:8,c:'#e06d5b',a:'end'})+tx([60,152],'entrata',{s:8});
+   cards.push({t:'La sponda non è uno specchio',src:'Margutti, lezione 2',svg:SV('0 0 286 166',b,'Tre uscite dalla sponda per biliardo nuovo, semi-nuovo e battuto'),
+    p:'Le biglie saltano, slittano e curvano. La sponda ha un becco più alto del centro della biglia: la biglia ci si insacca e viene respinta, ma una parte della spinta diventa effetto naturale di sponda e calore. Subito dopo l\'urto la biglia <b>plana e slitta</b> sul panno, poi riprende la direzione data dalla propria rotazione: è lo <b>scivolamento</b>. Sul biliardo nuovo scivola di più, su quello battuto meno. La traiettoria dipende da angolo d\'entrata, forza, rotazione, ma anche da temperatura, umidità e pulizia del panno.'});}
+  /* 4 centri multipli */
+  {const yo=20;let b=tbl(ox,yo,s,'');const CM=[ox+2*s,yo+4*s+60];
+   for(const st of [[0.6,0.6],[5.5,0.9],[7.2,2.2]]){const a=P(st[0],st[1],yo),t=(yo+4*s-a[1])/(CM[1]-a[1]),hit=[a[0]+(CM[0]-a[0])*t,yo+4*s];b+=ln(a,hit,'#f3ecdc','',1.4)+ln(hit,CM,'#c9a25a','3 3',1)+bl(a,'#f3ecdc',3.5);}
+   for(let i=-1;i<=7;i++)b+='<circle cx="'+(ox+i*s)+'" cy="'+CM[1]+'" r="'+(i===2?3.5:2)+'" fill="'+(i===2?'#c9a25a':'#8f6d33')+'"/>';
+   b+=tx([CM[0]+8,CM[1]+14],'CentroMultiplo: tutte le diagonali convergono qui',{s:8.5,a:'start',i:1})+tx([ox+250,CM[1]-6],'asse dei CM, uno ogni diamante',{s:8,a:'end'});
+   cards.push({t:'I Centri Multipli',src:'Margutti, lezioni 3, 4 e 8',svg:SV('0 0 286 222',b,'Diagonali da posizioni diverse che convergono in un punto esterno al tavolo'),
+    p:'Margutti porta lo specchio fuori dal tavolo. Il CentroMultiplo dell\'angolo si trova a circa 160 cm dal diamante 0 della sponda di mira, in perpendicolare; i CentriMultipli fondamentali stanno su un asse a 320 cm, uno ogni diamante. Mirando lo stesso CentroMultiplo da qualunque posizione, con circa ⅔ d\'effetto (zona B4), la biglia arriva sempre nello stesso punto in terza sponda: 10, 15, circa 20, 24, 28, 31 punti per i CM successivi. L\'insieme di queste corrispondenze è la <b>mappatura</b> del biliardo, la sua impronta digitale: cambia tra biliardo nuovo e battuto, e perfino tra pomeriggio e sera.'});}
+  /* 5 effetti zonali */
+  {const c=[70,120],R=95;let b='<path d="M'+c[0]+' '+c[1]+' L'+c[0]+' '+(c[1]-R)+' A'+R+' '+R+' 0 0 1 '+(c[0]+R)+' '+c[1]+' Z" fill="#f3ecdc" stroke="#8f6d33"/>';
+   for(let i=1;i<6;i++){const d=R*i/6;b+=ln([c[0]+d,c[1]],[c[0]+d,c[1]-Math.sqrt(R*R-d*d)],'#cdbf9f','',0.7)+ln([c[0],c[1]-d],[c[0]+Math.sqrt(R*R-d*d),c[1]-d],'#cdbf9f','',0.7);}
+   const cell=(col,row,f,l)=>{const x=c[0]+R*(col-1)/6,y=c[1]-R*row/6;return '<rect x="'+x+'" y="'+y+'" width="'+(R/6)+'" height="'+(R/6)+'" fill="'+f+'" opacity=".85"/>'+tx([x+R/12,y+R/12+3],l,{s:7.5,c:'#2a1b16'});};
+   b+=cell(4,2,'#c9a25a','B4')+cell(2,4,'#6fbf8f','D2');
+   'ABCDEF'.split('').forEach((L,i)=>{b+=tx([c[0]-8,c[1]-R*(i+0.5)/6+3],L,{s:8});});for(let i=1;i<=6;i++)b+=tx([c[0]+R*(i-0.5)/6,c[1]+12],i,{s:8});
+   b+=tx([185,40],'D2 ≈ ⅓ d\'effetto',{s:9,a:'start',c:'#6fbf8f'})+tx([185,56],'B4 ≈ ⅔ d\'effetto',{s:9,a:'start',c:'#c9a25a'})+tx([185,72],'A6 quasi massimo',{s:9,a:'start'})+tx([185,96],'schema indicativo',{s:8,a:'start',i:1});
+   cards.push({t:'Gli effetti zonali',src:'Margutti, lezioni 5 e 6',svg:SV('0 0 286 140',b,'Quarto di biglia diviso in zone da A a F e da 1 a 6'),
+    p:'Invece di dire «mezzo effetto» o «due terzi», Margutti divide il quarto di biglia in sei archi e ottiene una griglia di zone: lettere da A a F e numeri da 1 a 6. Una zona tollera piccole variazioni da biliardo a biliardo. I due effetti principali del tre sponde sono <b>D2</b>, circa ⅓, e <b>B4</b>, circa ⅔, il «taglio principe»: stabilizza la traiettoria anche con diagonali larghe e conserva la rotazione per tutto il percorso. L\'A6, quasi massimo, è troppo sensibile a forza e distanza. Il colpo va dato appena sopra la pancia, non in testa.'});}
+  /* 6 garuffa */
+  {const yo=24;let b=tbl(ox,yo,s,'',{castle:9});const pin=P(4,2,yo);
+   const refs=[[0,2],[1,3],[2,4.2]];refs.forEach(([cy,lx],i)=>{const a=P(0,cy,yo),m=P(lx,0,yo);b+=ln(a,m,i===1?'#f3ecdc':'#c9a25a',i===1?'':'3 3',1.4)+tx([m[0],m[1]-12],lx===4.2?'4+':lx,{s:8});b+=tx([a[0]-14,a[1]+3],cy,{s:8});});
+   const a=P(0,3,yo),m=P(3,0,yo);b+=pl([P(1.2,3.4,yo),a,m,pin],'#f3ecdc','',1.6)+bl(P(1.2,3.4,yo));
+   cards.push({t:'Garuffa e mezze garuffe',src:'Margutti, lezione 7',svg:SV('0 0 286 172',b,'Due sponde, corta e lunga, al birillo rosso con effetto contro'),
+    p:'La garuffa, dall\'ingegner Giuseppe Garuffa, porta la battente al birillo rosso in due sponde, prima la corta poi la lunga, con effetto <b>contro</b>. Con il massimo effetto contro le diagonali di riferimento sono tre: dal diamante immaginario della corta al 2° della lunga, dal 1° della corta al 3° della lunga, dal 2° della corta a poco più del 4°. Fra il centro multiplo del senza effetto e quello del massimo contro stanno tutte le mezze garuffe; il mezzo effetto non sta a metà, perché il rapporto è esponenziale. Sul biliardo battuto le diagonali che sul nuovo vogliono mezzo effetto chiedono almeno ⅔.'});}
+  /* 7 biliardi virtuali */
+  {let b='';const mini=(x,y,w,h,f,st)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'" stroke="'+(st||'none')+'" stroke-dasharray="3 2"/>';
+   b+=mini(12,40,72,36,'#2e7a62')+mini(30,52,72,36,'none','#c9a25a')+tx([56,112],'traslato',{s:9});
+   b+=mini(110,40,72,36,'#2e7a62')+mini(128,22,36,72,'none','#c9a25a')+tx([146,112],'ruotato',{s:9});
+   b+=mini(206,40,72,36,'#2e7a62')+mini(224,49,36,18,'none','#c9a25a')+tx([242,112],'scalato',{s:9});
+   cards.push({t:'I biliardi virtuali',src:'Margutti, lezione 9',svg:SV('0 0 286 124',b,'Tre biliardi virtuali: traslato, ruotato e scalato'),
+    p:'Un sistema imparato per arrivare in angolo si può riusare spostando idealmente il biliardo. <b>Traslato</b>: l\'angolo virtuale coincide con un altro punto, per esempio la mezzeria, come nell\'accosto lunga-lunga a zig-zag. <b>Ruotato</b> di 90°: è la base di candela, bricolle e tiri di più sponde. <b>Scalato</b>: un biliardo più piccolo per traversino, sponda al volo e due a mo\' di tre; anche il birillo rosso di tre sponde si legge come una scalatura. In fondo a essere spostati sono sempre i Centri Multipli.'});}
+  /* 8 bricolla */
+  {const yo=24;let b=tbl(ox,yo,s,'',{castle:9});const pin=P(4,2,yo);
+   for(let k=1;k<=7;k++){const a=P(8,k*0.5,yo);}
+   const W=P(1.3,3.3,yo),cor=P(8,1.2,yo),lng=P(6.2,0,yo);b+=ln(W,cor,'#f3ecdc','',1.6)+pl([cor,lng,pin],'#f3ecdc','',1.6)+ln(lng,pin,'#c9a25a','3 3',1)+bl(W);
+   b+=tx([cor[0]+12,cor[1]+3],'5',{s:9})+tx([lng[0],lng[1]-12],'diagonale lunga/corta',{s:8,i:1});
+   cards.push({t:'La bricolla',src:'Bibbia del biliardo · Margutti, lezioni 10 e 11',svg:SV('0 0 286 172',b,'Bricolla: corta, poi lunga, poi birillo centrale'),
+    p:'Nel sistema della Bibbia le diagonali lunga/corta portano tutte al birillo centrale. Si cerca quella che passa per la battente (per esempio 5): dopo aver battuto a 5 in corta, la biglia percorre la diagonale dal 5 della lunga al centrale. Poi si aggiunge lo scarto, un punto e mezzo per ogni birillo in orizzontale (es. 3): battuta 5 + 3 = 8 per incastellare la bersaglio. Partenza e mira si contano sul legno, l\'arrivo in seconda sponda sulla gomma. Margutti la spiega con un biliardo ruotato: senza effetto o con massimo effetto buono esiste un centro multiplo preciso; bricolla sul largo e ricciolo sullo stretto sono lo stesso tiro. Per la goriziana, rispetto al rosso: birillo da 2 sul largo −3÷4 unità, da 8 sul largo −2, da 8 sullo stretto +2, da 2 sullo stretto +4÷5.'});}
+  /* 9 angolo 50 */
+  {const yo=30;let b=tbl(ox,yo,s,'');const mira=[0,10,20,30,40,50,70,90],part=['',15,20,25,30,35,40,45,50];
+   mira.forEach((v,i)=>{b+=tx([ox+i*s,yo-14],v,{s:8,c:'#e8dcc2'});});part.forEach((v,i)=>{if(v!=='')b+=tx([ox+i*s,yo+4*s+20],v,{s:8,c:'#7fa4ff'});});
+   const Pp=P(7.8,4,yo),M=P(3.1,0,yo),L=P(0,2.1,yo),A=P(1.8,4,yo);b+=pl([Pp,M,L,A],'#f3ecdc','',1.6)+bl([Pp[0],Pp[1]-6])+'<circle cx="'+A[0]+'" cy="'+A[1]+'" r="4" fill="none" stroke="#e06d5b"/>';
+   b+=tx([M[0]+4,M[1]+14],'mira 31',{s:8.5,a:'start'})+tx([A[0]+6,A[1]-8],'arrivo 18',{s:8.5,a:'start',c:'#e06d5b'})+tx([Pp[0]-4,Pp[1]-14],'partenza 49',{s:8.5,a:'end'})+tx([ox+120,yo+4*s+32],'blu: numeri di partenza · in alto: numeri di mira',{s:8,i:1});
+   cards.push({t:'Angolo 50: tre sponde di calcio',src:'Bibbia del biliardo · Margutti, lezioni 12 e 13',svg:SV('0 0 286 200',b,'Numerazione dell\'Angolo 50 con un esempio a tre sponde'),
+    p:'Si trova l\'<b>arrivo</b> sulla palla avversaria in terza sponda con le diagonali (es. 14), si aggiunge lo scarto della battente (+4) e si calcola: <b>partenza − arrivo = mira</b>. Nell\'esempio della Bibbia 49 − 18 = 31: si mira il 31 in prima sponda. Effetto: mezzo effetto («2 in pancia»), ⅔ per le uscite 0 e 30; sbracciata accompagnata morbida. Perché funziona? Sulla sponda di partenza ogni diamante vale 5, su quella di mira 10: il rapporto 1:2 è una similitudine fra triangoli (Talete) e tutte le diagonali con la stessa differenza convergono nello stesso Centro Multiplo. Partendo dalla corta però la numerazione perde convergenza: il 60 che guarda il 50 non è una diagonale 10 ma 7,5, quindi si tolgono 2 punti. Sono le <b>compensazioni</b>.'});}
+  /* 10 due sponde a scendere */
+  {const yo=24;let b=tbl(ox,yo,s,'',{castle:5});const W=P(0,1.9,yo),B=P(4.6,0,yo),U=P(8,1.4,yo),T=P(6.4,2.7,yo),F=P(8,0.33,yo);
+   b+=pl([W,B,U,T],'#f3ecdc','',1.6)+bl(W,'#f3ecdc')+bl(T,'#dfae3a')+ln(F,T,'#c9a25a','3 3',1);
+   b+=tx([B[0],B[1]-12],'battuta 12 + 6 = 18',{s:8.5})+tx([U[0]+10,U[1]+3],'12',{s:8.5,a:'start'})+tx([F[0]+10,F[1]+3],'fisso 10',{s:8,a:'start',i:1});
+   cards.push({t:'Due sponde a scendere',src:'Bibbia del biliardo',svg:SV('0 0 286 172',b,'Due sponde: lunga, poi corta, poi la bersaglio'),
+    p:'Dal punto fisso 10 della corta si traguarda la bersaglio nel punto dove vogliamo colpirla e si prolunga la retta: si trova l\'uscita in corta (es. 12). Poi si traguarda il 12 con il centro della battente fino alla sponda di partenza e si legge lo scarto (es. 6). Battuta: 12 + 6 = 18 per un tiro di misura (di solito per incastellare la bersaglio), 17 per un tiro a scendere, 16 per un tiro al volo. Effetto 0 in CPS, sbracciata allungata morbida. Con la variante dei <b>4 zeri</b> si parte dal punto fisso centrale 0 (es. 5 + 3 = 8 a scendere, 7 di misura, 9 al volo): è utile quando le biglie sono lontane dalle sponde. Se le sponde «mollano», una carezza di effetto a favore.'});}
+  /* 11 garuffa X */
+  {const yo=24;let b=tbl(ox,yo,s,'',{castle:9});const pin=P(4,2,yo),O=P(5.6,1.2,yo),U=P(8,-0.3,yo);
+   b+=ln(pin,[ox+8*s,yo+0.0*s+3],'#c9a25a','3 3',1)+bl(O,'#dfae3a');
+   const W=P(2,3.4,yo),M=P(3,4,yo);b+=pl([W,M,[ox+8*s,yo+0.25*s],O],'#f3ecdc','',1.4)+bl(W);
+   b+=tx([M[0],M[1]+16],'diamante «3» × 4 = 12',{s:8.5})+tx([ox+8*s-4,yo-12],'uscita 12',{s:8.5,a:'end'});
+   cards.push({t:'Garuffa X',src:'Bibbia del biliardo',svg:SV('0 0 286 178',b,'Garuffa X: il punto in corta si trova moltiplicando'),
+    p:'Si traguarda il birillo rosso con il centro della bilia avversaria e si prolunga la retta fino alla sponda corta: è il punto di battuta in corta (es. 12). Memorizzando le battute di partenza e di prima sponda, con una moltiplicazione si trova il punto di mira: il diamante «3» di prima sponda, perché 4 × 3 = 12. Attenzione: il conteggio ha un errore sul diamante 1, dove 4 × 1 vale 5 e 5 × 1 vale 7. Effetto variabile, sbracciata affondata morbida.'});}
+  /* 12 misure */
+  cards.push({t:'Misure regolamentari usate nel gioco',src:'FIBIS art. 2 e 3 · ENDAS art. 3',svg:'',
+    p:'<span class="meas"><b>Piano</b> 2840 × 1420 mm · <b>Diamanti</b> ogni 355 mm · <b>Sponde</b> larghe 12,5–15 cm, becco a 37 mm · <b>Biglie</b> 61 mm · <b>Pallino</b> 61 mm (59 mm nella goriziana ENDAS, giocata a mano) · <b>Birilli</b> alti 25 mm, base 10 mm, testa 6–7 mm, interasse 66 mm · <b>Bollini</b> a 10 cm dalla sponda corta.</span> Nella pianta i birilli sono disegnati un poco più grandi del vero per vederli sul telefono; nella fisica e nella vista giocatore hanno la misura reale.'});
+  return cards;
+}
+function renderSchool(){
+  const el=$('schoolCards');if(el.dataset.done)return;el.dataset.done='1';
+  el.innerHTML=schoolCards().map(c=>'<article class="card"><h3>'+c.t+'</h3><div class="srcl">'+c.src+'</div>'+(c.svg?'<div class="fig">'+c.svg+'</div>':'')+'<p>'+c.p+'</p></article>').join('')+
+    '<article class="card wide"><h3>Le regole a confronto</h3><div class="rules2"><div>'+RULES.gor+'</div><div>'+RULES.ita+'</div></div><p class="small">Entrambe le specialità seguono il regolamento FIBIS per la stecca. Nella goriziana del regolamento ENDAS, giocata a mano, alcuni valori cambiano: pallino 3 o 6, falli da 6, regola della mezzeria e tiro di fisso.</p></article>';
+}
+
+/* ===== selfie → giocatore pixel ===== */
+let selfieImg=null,selfieOut=null;
+function pixelate(){
+  if(!selfieImg){$('npPrev').hidden=true;return;}
+  const N=+$('npPx').value,H=Math.round(N*1.27),iw=selfieImg.naturalWidth||selfieImg.width,ih=selfieImg.naturalHeight||selfieImg.height;
+  const ar=N/H;let cw=iw,ch=iw/ar;if(ch>ih){ch=ih;cw=ih*ar;}const cx0=(iw-cw)/2,cy0=Math.max(0,(ih-ch)*0.3);
+  const c=document.createElement('canvas');c.width=N;c.height=H;const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+  g.drawImage(selfieImg,cx0,cy0,cw,ch,0,0,N,H);
+  const d=g.getImageData(0,0,N,H),a=d.data;
+  const lv=7,q=v=>Math.round(Math.max(0,Math.min(255,(v-128)*1.15+128))/255*(lv-1))*(255/(lv-1));
+  for(let i=0;i<a.length;i+=4){a[i]=q(a[i]);a[i+1]=q(a[i+1]);a[i+2]=q(a[i+2]);}
+  if($('npBg').checked){
+    const idx=(x,y)=>(y*N+x)*4,seen=new Uint8Array(N*H),st=[];
+    for(let x=0;x<N;x++)st.push([x,0]);for(let y=0;y<Math.round(H*0.55);y++){st.push([0,y]);st.push([N-1,y]);}
+    const ref=st.map(([x,y])=>{const i=idx(x,y);return[a[i],a[i+1],a[i+2]];});
+    const near=(i)=>ref.some(r=>Math.abs(a[i]-r[0])+Math.abs(a[i+1]-r[1])+Math.abs(a[i+2]-r[2])<70);
+    while(st.length){const [x,y]=st.pop();if(x<0||y<0||x>=N||y>=H)continue;const k=y*N+x;if(seen[k])continue;seen[k]=1;const i=k*4;if(!near(i))continue;a[i+3]=0;st.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);}
+  }
+  g.putImageData(d,0,0);selfieOut=c.toDataURL('image/png');
+  $('npPrev').src=selfieOut;$('npPrev').hidden=false;$('npSave').disabled=false;
+}
+function readFile(f){if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{selfieImg=im;pixelate();};im.onerror=()=>msg('Non riesco a leggere questa immagine. Prova con un\'altra foto.');im.src=r.result;};r.readAsDataURL(f);}
+$('npCam').onchange=e=>readFile(e.target.files[0]);$('npFile').onchange=e=>readFile(e.target.files[0]);
+$('npPx').oninput=pixelate;$('npBg').onchange=pixelate;
+$('npCancel').onclick=()=>{$('newp').hidden=true;};
+$('npSave').onclick=()=>{
+  const name=($('npName').value||'').trim();if(!name){$('npErr').textContent='Scrivi un nome per il giocatore.';$('npName').focus();return;}
+  if(!selfieOut){$('npErr').textContent='Scatta o scegli prima una foto.';return;}
+  const id='u'+Date.now().toString(36);CHARS[id]={name:name.slice(0,16),img:selfieOut,custom:true};saveCustom();
+  setupSel.me=id;$('newp').hidden=true;selfieImg=null;selfieOut=null;$('npName').value='';$('npPrev').hidden=true;
+  rebuildChars();renderSetup();msg('Nuovo giocatore: '+name+'.');
+};
+$('npName').oninput=()=>{$('npErr').textContent='';};
+function openNew(){$('newp').hidden=false;$('npErr').textContent='';$('npSave').disabled=!selfieOut;$('newp').scrollIntoView({block:'nearest',behavior:'smooth'});}
+
+/* ===== modalità e schermate ===== */
+function charCard(id,group){const b=document.createElement('div');b.className='char';b.dataset.id=id;
+  b.innerHTML='<button class="pick" aria-pressed="false"><img alt="" src="'+CHARS[id].img+'"><span></span></button>'+(CHARS[id].custom?'<button class="del" aria-label="Elimina '+CHARS[id].name+'">×</button>':'');
+  b.querySelector('span').textContent=CHARS[id].name;
+  b.querySelector('.pick').onclick=()=>{const other=group==='me'?'opp':'me';if(setupSel[other]===id)setupSel[other]=setupSel[group];setupSel[group]=id;renderSetup();};
+  const del=b.querySelector('.del');if(del)del.onclick=()=>{delete CHARS[id];saveCustom();if(setupSel.me===id)setupSel.me='zibi';if(setupSel.opp===id)setupSel.opp='pietro';rebuildChars();renderSetup();};
+  return b;}
+function rebuildChars(){for(const [el,g] of [['cMe','me'],['cOpp','opp']]){const c=$(el);c.innerHTML='';Object.keys(CHARS).forEach(id=>c.appendChild(charCard(id,g)));
+  if(g==='me'){const n=document.createElement('div');n.className='char';n.innerHTML='<button class="pick newbtn"><span class="plus">+</span><span>Nuovo da foto</span></button>';n.querySelector('button').onclick=openNew;c.appendChild(n);}}}
+function chipRow(el,items,cur,onPick){const c=$(el);c.innerHTML='';items.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;b.setAttribute('aria-pressed',String(v===cur));b.onclick=()=>onPick(v);c.appendChild(b);});}
+function renderSetup(){
+  if(!$('cMe').children.length)rebuildChars();
+  for(const [el,g] of [['cMe','me'],['cOpp','opp']])[...$(el).children].forEach(b=>{const p=b.querySelector('.pick');if(b.dataset.id)p.setAttribute('aria-pressed',String(b.dataset.id===setupSel[g]));});
+  chipRow('gSel',[['gor','Goriziana · 9 birilli'],['ita','Italiana · 5 birilli']],setupSel.game,v=>{setupSel.game=v;setupSel.target=GAMES[v].def;S=freshTable(v);renderSetup();renderRules();});
+  chipRow('lvl',LEVELS.map(L=>[L.n,L.n+' · '+L.name]).concat([[0,'Amico (2 giocatori)']]),setupSel.level,v=>{setupSel.level=v;renderSetup();});
+  chipRow('tgt',GAMES[setupSel.game].targets.map(n=>[n,String(n)]),setupSel.target,v=>{setupSel.target=v;renderSetup();});
+  $('labOpp').textContent='Avversario con la '+GAMES[setupSel.game].bn.y;
+}
+function updateScore(){
+  if(!match)return;const P=match.players;
+  [0,1].forEach(i=>{$('s'+i).textContent=match.score[i];$('n'+i).textContent=CHARS[P[i].char].name+(P[i].cpu?' · liv. '+P[i].level:'');$('i'+i).src=CHARS[P[i].char].img;$('p'+i).classList.toggle('on',match.turn===i&&!match.over);$('b'+i).style.background=GAMES[match.game].col[i?'y':'w'];});
+  $('turn').innerHTML=GAMES[match.game].name+' a '+match.target+'<b>'+(match.over?'Fine':'Tocca a '+CHARS[P[match.turn].char].name)+'</b>';
+}
+function startMatch(){
+  cancelAll();const cpu=setupSel.level>0;
+  if(!CHARS[setupSel.me])setupSel.me='zibi';if(!CHARS[setupSel.opp])setupSel.opp='pietro';
+  match={game:setupSel.game,players:[{char:setupSel.me,cpu:false},{char:setupSel.opp,cpu,level:setupSel.level||0}],score:[0,0],turn:0,target:setupSel.target,over:false,offer:null,S:freshTable(setupSel.game)};
+  S=match.S;inHand={me:'w',op:'y'};$('win').hidden=true;applyMode();aimAtOpp();setSpin(0,0);setPower(40);
+  msg('Inizia '+CHARS[setupSel.me].name+': metti la bianca dove vuoi nella metà sinistra, poi tira sulla '+GM().bn.y+'.');
+}
+function showWin(i){const c=CHARS[match.players[i].char];$('winImg').src=c.img;$('winTxt').textContent='Vince '+c.name;$('winScore').textContent=match.score[0]+' a '+match.score[1];$('win').hidden=false;updateScore();showOffer();}
+function applyMode(){
+  const tr=mode==='train',sc=mode==='school';
+  $('tabTrain').setAttribute('aria-pressed',String(tr));$('tabMatch').setAttribute('aria-pressed',String(mode==='match'));$('tabSchool').setAttribute('aria-pressed',String(sc));
+  $('gameUI').hidden=sc;$('school').hidden=!sc;
+  $('setup').hidden=mode!=='match'||!!match;
+  const setupOnly=mode==='match'&&!match;['viewRow','stageBox','shootRow','msg','ctrlBox','offerBar'].forEach(id=>{$(id).hidden=setupOnly||(id==='offerBar'&&$(id).hidden);});$('scoreBar').hidden=mode!=='match'||!match;
+  $('trainBar').hidden=!tr;$('tips').hidden=!tr;$('win').hidden=mode!=='match'||!(match&&match.over);
+  $('newg').textContent=tr?'Ripeti tiro':'Nuova partita';
+  if(tr)chipRow('gTrain',[['gor','Goriziana'],['ita','Italiana']],trainGame,v=>{if(v===trainGame)return;cancelAll();trainGame=v;trainS=freshTable(v);S=trainS;trainSnap=null;applyMode();aimAtOpp();msg(GAMES[v].full+': trascina le biglie e prova i tiri.');});
+  if(sc)renderSchool();else renderRules();
+  updateScore();showOffer();
+}
+$('tabTrain').onclick=()=>{if(mode==='train')return;if(mode==='match'){finishNow();if(match)match.inHandSaved=inHand;}cancelAll();mode='train';S=trainS;inHand=null;applyMode();aimAtOpp();msg('Allenamento: trascina le biglie e prova i tiri.');};
+$('tabMatch').onclick=()=>{if(mode==='match')return;if(mode==='train')finishNow();cancelAll();mode='match';S=match?match.S:freshTable(setupSel.game);if(!match){renderSetup();inHand=null;}else inHand=match.inHandSaved||null;applyMode();if(match)aimAtOpp();msg(match?'Partita in corso.':'Scegli gioco, personaggi e livello, poi inizia.');if(isCpuTurn())laterCpu(500);};
+$('tabSchool').onclick=()=>{if(mode==='school')return;if(mode==='match'||mode==='train')finishNow();if(mode==='match'&&match)match.inHandSaved=inHand;cancelAll();mode='school';applyMode();};
+$('startMatch').onclick=startMatch;
+$('again').onclick=()=>{cancelAll();match=null;inHand=null;S=freshTable(setupSel.game);$('win').hidden=true;renderSetup();applyMode();msg('Scegli gioco, personaggi e livello, poi inizia.');};
+$('newg').onclick=()=>{if(mode==='train'){if(busy())return;redo();return;}cancelAll();match=null;S=freshTable(setupSel.game);inHand=null;renderSetup();applyMode();msg('Scegli gioco, personaggi e livello, poi inizia.');};
+function redo(){if(!trainSnap||busy())return;KEYS.forEach(k=>Object.assign(S.balls[k],trainSnap[k],{vx:0,vy:0,side:0,fol:0}));setAngle(trainSnap.angle);setPower(trainSnap.power);setSpin(trainSnap.sx,trainSnap.sy);msg('Posizione del tiro precedente ripristinata.');}
+$('redo').onclick=redo;
+$('resetTrain').onclick=()=>{cancelAll();trainS=freshTable(trainGame);S=trainS;aimAtOpp();msg('Posizione iniziale.');};
+
+trainS=freshTable(trainGame);S=trainS;setPower(40);setSpin(0,0);aimAtOpp();applyMode();
+try{if(localStorage.getItem('mg-view')==='3d')setView('3d');}catch(e){}
+requestAnimationFrame(frame);
+})();
+</script>
