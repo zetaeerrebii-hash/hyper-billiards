@@ -1,6 +1,6 @@
 # Architettura
 
-Pagina HTML unica. Il JavaScript è un solo modulo IIFE diviso in due file sorgente (`core.js` e `ui.js`) che `tools/build.py` concatena. Nessun framework; l'unica libreria esterna è three.js r128 per la vista 3D, caricata da cdnjs.
+Pagina HTML unica. Il JavaScript è un solo modulo IIFE diviso in due file sorgente (`core.js` e `ui.js`) che `tools/build.py` concatena. Nessun framework; l'unica libreria esterna è three.js r128 per la vista 3D, in `vendor/three/`: `index.html` la carica dallo stesso dominio, `dist/artifact.html` (artefatto claude.ai) la carica da cdnjs, uno dei pochi host ammessi dagli artefatti.
 
 ## 1. Unità e misure
 

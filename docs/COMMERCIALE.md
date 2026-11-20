@@ -13,11 +13,11 @@ Questa è una checklist pratica, non un parere legale: per i punti segnati come 
 ## Da sistemare ma non bloccanti
 | Elemento | Note |
 |---|---|
-| three.js r128 | licenza MIT: includere il testo della licenza nei crediti |
+| three.js r128 | licenza MIT: il testo è in `vendor/three/LICENSE`; citarlo nei crediti dell'app |
 | Font Cinzel ed EB Garamond | SIL Open Font License: uso commerciale libero; per un'app nativa conviene incorporarli invece di caricarli da Google |
 | Il Vecio | pixel art originale disegnata durante lo sviluppo; la foto di riferimento ricevuta (Getty Images) **non** è stata usata e non va usata |
 | Codice | scritto con l'assistenza di Claude. Verificare nei termini commerciali del piano Anthropic usato che la titolarità degli output sia del cliente (nei piani commerciali di norma lo è) e registrare chi ha contribuito |
-| Dipendenze da CDN | per un prodotto, servire three.js e i font dal proprio dominio (affidabilità e privacy) |
+| Dipendenze da CDN | three.js ora è servito dal proprio dominio; restano i font da Google: incorporarli prima del lancio (privacy, GDPR) |
 
 ## Privacy (GDPR)
 - **Selfie**: la foto è elaborata solo nel browser e salvata in `localStorage` del dispositivo; non viene inviata a server. In un prodotto serve comunque un'informativa chiara, e se un domani i giocatori finiscono su server (classifiche, gioco online) servono consenso esplicito, conservazione limitata e possibilità di cancellazione: si tratta di immagini di volti.

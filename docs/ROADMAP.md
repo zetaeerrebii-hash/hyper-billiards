@@ -13,7 +13,7 @@
 4. **Scuola interattiva**: ogni scheda apre la posizione in allenamento; esercizi con obiettivo e punteggio; progressi salvati.
 5. **App installabile**: PWA (offline) e, se serve, pacchetti iOS/Android con Capacitor.
 6. **Accessibilità e lingue**: inglese, controlli da tastiera, contrasti verificati.
-7. **Qualità**: test automatici in CI (punteggi + prova Playwright su pianta, 3D, telefono), dividere `core.js` in moduli (fisica, regole, consigli, computer, disegno) con un bundler leggero.
+7. **Qualità**: ~~test automatici in CI (punteggi + prova Playwright su pianta, 3D, telefono)~~ fatto il 20/11/2026; resta da dividere `core.js` in moduli (fisica, regole, consigli, computer, disegno) con un bundler leggero.
 
 ## Domande aperte per il team
 - Pubblico principale: giocatori di circolo, principianti, scuole?

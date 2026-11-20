@@ -1,7 +1,7 @@
 # Contesto del progetto (da caricare in un Progetto Claude del team)
 
 **Committente:** Daniele Zerbi (Fuzz Atelier S.R.L.). **Lingua:** italiano.
-**Prodotto:** HYPER BILLIARDS (nome scelto il 20/11/2026; prima "Maestria Goriziana"), gioco e strumento di apprendimento per il biliardo all'italiana con la stecca. Repository: `maestria-goriziana` (vedi README, ARCHITETTURA, REGOLE).
+**Prodotto:** HYPER BILLIARDS (nome scelto il 20/11/2026; prima "Maestria Goriziana"), gioco e strumento di apprendimento per il biliardo all'italiana con la stecca. Repository: `hyper-billiards` (prima `maestria-goriziana`); gruppo HYPER FALSE `HF_APP_HYPER BILLIARDS` (vedi README, ARCHITETTURA, REGOLE).
 
 ## Come è nato
 Partito da una spiegazione delle sponde e della lettura dei diamanti, è diventato un tavolo d'allenamento e poi un gioco completo, rifinito con il committente in molte iterazioni.
@@ -20,6 +20,12 @@ Partito da una spiegazione delle sponde e della lettura dei diamanti, è diventa
 - **Vista giocatore 3D**: con lo zoom indietro la camera **sale in verticale** dal punto in cui sta chi tira, non si allontana; la stecca deve restare sempre in quadro; dopo il colpo la camera si alza "in piedi" per seguire le biglie.
 - **Interfaccia**: nome "HYPER BILLIARDS", look caldo vintage nobile (noce, bordeaux, ottone, avorio, font Cinzel ed EB Garamond); pulsante "Tira" subito sotto il tavolo per l'uso da telefono.
 - **Personaggi**: Pietro e Zibi (ritratti pixel senza sfondo), Il Vecio (pixel art originale); il giocatore può crearne di nuovi da selfie.
+
+## Decisioni dopo la migrazione (Decisione · motivo · data)
+- Il progetto entra nella Regia HYPER FALSE come gruppo `HF_APP_HYPER BILLIARDS` · organizzazione dello studio · 20/11/2026
+- Repository rinominato `hyper-billiards` e trasferito nell'organizzazione; GitHub è la fonte di verità del codice · continuità della storia e lavoro di squadra · 20/11/2026
+- three.js servito dal proprio dominio sul sito; nell'artefatto da cdnjs · affidabilità e privacy del prodotto, artefatto leggero · 20/11/2026
+- Prova nel browser e CI obbligatorie su ogni pull request · evitare regressioni su pianta, 3D e telefono · 20/11/2026
 
 ## Fonti usate
 Regolamenti FIBIS ed ENDAS; *Le traiettorie del biliardo* (Margutti, BiliardoWeb Magazine); *La Bibbia del biliardo*. Vedi COMMERCIALE.md per i diritti.
