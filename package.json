@@ -1,0 +1,16 @@
+{
+  "name": "hyper-billiards",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HYPER BILLIARDS · gioco e scuola di biliardo all'italiana (goriziana e 5 birilli, regolamento FIBIS)",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "check": "python3 tools/build.py --check",
+    "test": "node tests/scoring.test.js",
+    "smoke": "node tests/smoke.test.js && node tests/smoke.test.js dist/artifact.html",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

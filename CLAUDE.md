@@ -1,5 +1,7 @@
 # Istruzioni per Claude su questo repository
 
+Gruppo HYPER FALSE: **HF_APP_HYPER BILLIARDS** (vedi `HF_CORE.md` per le regole dello studio, `STATO.md` per il punto della situazione).
+
 Progetto: **HYPER BILLIARDS** (prima si chiamava Maestria Goriziana), gioco di biliardo (goriziana 9 birilli e italiana 5 birilli, regolamento FIBIS con la stecca). Pagina unica, nessun backend. Lingua dell'interfaccia e dei commenti: italiano.
 
 ## Regole di lavoro
@@ -11,7 +13,15 @@ Progetto: **HYPER BILLIARDS** (prima si chiamava Maestria Goriziana), gioco di b
 - Biglie: bianca (giocatore 1), gialla (giocatore 2), pallino rosso, in entrambi i giochi.
 - Il Vecio compare con "Cin cin!" quando chi tira beve (punti all'avversario); i punti fatti mostrano il ritratto di chi tira.
 - Prima di dire che qualcosa funziona, provarlo nel browser (Playwright: `require('playwright')`), anche a larghezza telefono (390 px) e nella vista 3D.
-- La pagina pubblicata come artefatto claude.ai è `dist/artifact.html` (senza doctype/head: lo scheletro lo aggiunge la piattaforma).
+- La pagina pubblicata come artefatto claude.ai è `dist/artifact.html`: documento HTML completo che inizia con `<!DOCTYPE html>`; three.js da cdnjs (gli artefatti ammettono script solo inline o da pochi CDN, cdnjs compreso; immagini solo come data URI). `index.html` carica three.js da `vendor/three/` (stesso dominio).
+- Prova nel browser automatica: `npm run smoke` (pianta, 3D, telefono, partita, scuola, errori JS) su `index.html` e sull'artefatto. In CI gira a ogni pull request insieme a `tools/build.py --check` e ai test dei punteggi.
+- Si lavora su un ramo e si apre una pull request; `main` è protetto.
+
+## Regole della Regia HYPER FALSE
+- **Chiudi la sessione**: alla fine di ogni sessione aggiornare `STATO.md` (Fatto, Deciso, Prossimi passi, Richieste per il centro, Approvazioni richieste). Resta una pagina.
+- Le decisioni prese con il committente vanno anche in `docs/CONTESTO-PROGETTO.md`, nella forma «Decisione · motivo · data».
+- `HF_CORE.md` non si modifica qui: arriva dal centro come copia datata.
+- Le persone approvano, Claude prepara: pubblicazioni, condivisioni, invii fuori dallo studio e spese (crediti, servizi) solo dopo l'ok di un socio.
 
 ## Dove guardare
 - Regole e punteggi: `evaluate()` e `pinCount()` in `core.js`; spiegazione in `docs/REGOLE.md`.
