@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Costruisce Maestria Goriziana da src/ in due file autonomi.
+"""Costruisce HYPER BILLIARDS da src/ in due file autonomi.
 
   index.html         pagina completa (doctype, head, body) per GitHub Pages o qualsiasi hosting statico
   dist/artifact.html  stessa pagina senza scheletro, nel formato che si pubblica come artefatto su claude.ai
@@ -23,7 +23,7 @@ for key in ("pietro", "zibi", "vecio"):
     js = js.replace(f"__{key.upper()}__", data_uri(key))
 
 head = (
-    "<title>Maestria Goriziana</title>\n"
+    "<title>HYPER BILLIARDS</title>\n"
     '<meta name="claude:viewport-fit-sides" content="cover">\n'
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600'

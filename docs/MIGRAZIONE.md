@@ -4,7 +4,7 @@ Il progetto vive oggi in tre posti. Ognuno si sposta in modo diverso.
 
 | Dove | Cosa c'è | Si sposta? |
 |---|---|---|
-| GitHub `zetaeerrebii-hash/maestria-goriziana` | sorgenti, build, documenti, sito GitHub Pages | sì, con il trasferimento del repository |
+| GitHub `zetaeerrebii-hash/maestria-goriziana` | sorgenti, build, documenti, sito GitHub Pages | sì, con il trasferimento del repository; durante il trasferimento conviene rinominarlo `hyper-billiards` (Settings → General → Repository name: GitHub reindirizza il vecchio nome) |
 | Artefatto su claude.ai (account personale) | la pagina giocabile con il link di condivisione | no: si ripubblica dall'account team, il link cambia |
 | Conversazione e memoria di Claude | storia delle decisioni | no: sostituita da `docs/CONTESTO-PROGETTO.md` |
 
@@ -23,7 +23,7 @@ Per quanto ne so non esiste un trasferimento diretto di un artefatto da un accou
 3. Condividi il nuovo link con il team dal menu **Condividi**. Il vecchio link personale resta valido finché non lo elimini: conviene aggiornare chi lo usa.
 
 ## 3. Contesto per Claude nell'account team
-- Crea un **Progetto** "Maestria Goriziana" e carica come conoscenza: `docs/CONTESTO-PROGETTO.md`, `docs/REGOLE.md`, `docs/ARCHITETTURA.md` e i PDF di riferimento (regolamenti FIBIS ed ENDAS, *Le traiettorie del biliardo*, *La Bibbia del biliardo*), se avete il diritto di usarli internamente.
+- Crea un **Progetto** "HYPER BILLIARDS" (istruzioni dettagliate in [PROGETTO-CLAUDE.md](PROGETTO-CLAUDE.md)) e carica come conoscenza: `docs/CONTESTO-PROGETTO.md`, `docs/REGOLE.md`, `docs/ARCHITETTURA.md` e i PDF di riferimento (regolamenti FIBIS ed ENDAS, *Le traiettorie del biliardo*, *La Bibbia del biliardo*), se avete il diritto di usarli internamente.
 - Per lavorare sul codice con Claude Code collega il repository dell'organizzazione: `CLAUDE.md` nella radice viene letto automaticamente e contiene le regole di lavoro.
 - La memoria personale di Claude non passa all'account team; tutto ciò che serve è nei documenti.
 

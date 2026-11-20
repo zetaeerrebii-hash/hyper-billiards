@@ -8,7 +8,7 @@ Questa è una checklist pratica, non un parere legale: per i punti segnati come 
 | 1 | **Ritratti di Pietro e Zibi** (`src/assets/`) | volti di persone reali, ricavati da foto | liberatoria scritta per uso commerciale, oppure sostituirli con personaggi inventati |
 | 2 | **Testi e schemi dai manuali** (Scuola e "Dal manuale" nei consigli) | sono sintesi e schemi derivati da *Le traiettorie del biliardo* di Margutti (BiliardoWeb Magazine) e da *La Bibbia del biliardo*; nomi dei sistemi e numerazioni sono loro contenuti | chiedere l'autorizzazione agli autori/editori (possibile anche come partnership), oppure riscrivere i contenuti in modo indipendente con un istruttore |
 | 3 | **Nomi delle federazioni** (FIBIS, ENDAS) e citazioni degli articoli | i regolamenti come regole del gioco sono fatti, ma nomi e loghi non vanno usati in modo da far pensare a un'approvazione | formula tipo "regole secondo il regolamento FIBIS", nessun logo; valutare un accordo con la federazione |
-| 4 | **Nome "Maestria Goriziana"** | da verificare la disponibilità come marchio e come dominio | ricerca su UIBM/EUIPO e registrazione se libero |
+| 4 | **Nome "HYPER BILLIARDS"** | da verificare la disponibilità come marchio (classi 9, 28 e 41: software, giochi, formazione) e come dominio; "billiards" è descrittivo, la parte distintiva è "Hyper", da confrontare con marchi esistenti, compresi i propri | ricerca su UIBM/EUIPO e registrazione se libero |
 
 ## Da sistemare ma non bloccanti
 | Elemento | Note |

@@ -1,4 +1,6 @@
-# Maestria Goriziana
+# HYPER BILLIARDS
+
+*Nome precedente: Maestria Goriziana.*
 
 Gioco e strumento di apprendimento per il biliardo all'italiana con la stecca: **goriziana (9 birilli)** e **italiana (5 birilli)**, entrambe con il regolamento FIBIS. Una sola pagina web, senza server: si apre in qualsiasi browser, anche da telefono.
 
@@ -42,4 +44,5 @@ Non ci sono dipendenze da installare. three.js r128 e i font (Cinzel, EB Garamon
 | [docs/COMMERCIALE.md](docs/COMMERCIALE.md) | diritti, licenze e privacy da sistemare prima di vendere |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | lavoro aperto e idee per la versione commerciale |
 | [docs/CONTESTO-PROGETTO.md](docs/CONTESTO-PROGETTO.md) | storia delle decisioni, da caricare in un progetto Claude |
+| [docs/PROGETTO-CLAUDE.md](docs/PROGETTO-CLAUDE.md) | come impostare il Progetto Claude del team e il ciclo di lavoro |
 | [CLAUDE.md](CLAUDE.md) | istruzioni per Claude Code quando lavora su questo repository |

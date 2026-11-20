@@ -1,6 +1,6 @@
 # Istruzioni per Claude su questo repository
 
-Progetto: **Maestria Goriziana**, gioco di biliardo (goriziana 9 birilli e italiana 5 birilli, regolamento FIBIS con la stecca). Pagina unica, nessun backend. Lingua dell'interfaccia e dei commenti: italiano.
+Progetto: **HYPER BILLIARDS** (prima si chiamava Maestria Goriziana), gioco di biliardo (goriziana 9 birilli e italiana 5 birilli, regolamento FIBIS con la stecca). Pagina unica, nessun backend. Lingua dell'interfaccia e dei commenti: italiano.
 
 ## Regole di lavoro
 - Si modifica solo `src/`. `index.html` e `dist/artifact.html` sono generati: dopo ogni modifica eseguire `python3 tools/build.py`.
