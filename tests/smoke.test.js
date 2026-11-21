@@ -20,7 +20,7 @@ const server = http.createServer((q, r) => {
   const browser = await chromium.launch();
   let fail = 0;
   const check = (ok, msg) => { console.log((ok ? 'ok  ' : 'FAIL') + ' ' + msg); if (!ok) fail++; };
-  for (const [label, vp] of [['desktop', { width: 1280, height: 900 }], ['telefono', { width: 390, height: 844 }]]) {
+  for (const [label, vp] of [['desktop', { width: 1280, height: 900 }], ['telefono', { width: 390, height: 844 }], ['orizzontale', { width: 844, height: 390 }]]) {
     const page = await browser.newPage({ viewport: vp });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -34,6 +34,16 @@ const server = http.createServer((q, r) => {
     await page.click('#vPlayer'); await page.waitForTimeout(1500);
     check(await page.evaluate(() => !!window.THREE && !!document.querySelector('#v3 canvas')), `${label}: vista giocatore 3D caricata (three.js)`);
     await page.screenshot({ path: path.join(ROOT, 'tests', `smoke-${label}-3d.png`) });
+    // modalità Osserva: rotazione, zoom, vista dall'alto, tiro con la camera libera, ritorno alla mira
+    await page.click('#cOrb'); await page.waitForTimeout(300);
+    const box = await page.locator('#v3').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2 + 40, { steps: 6 }); await page.mouse.up();
+    await page.mouse.wheel(0, -300); await page.click('#vTop'); await page.waitForTimeout(600);
+    check(await page.evaluate(() => document.getElementById('cOrb').getAttribute('aria-pressed') === 'true' && !document.getElementById('vTop').hidden), `${label}: Osserva e vista dall'alto`);
+    await page.click('#shoot'); await page.waitForTimeout(3000);
+    await page.click('#cAim'); await page.waitForTimeout(300);
+    check(await page.evaluate(() => document.getElementById('cAim').getAttribute('aria-pressed') === 'true' && document.getElementById('vTop').hidden), `${label}: ritorno alla mira`);
     await page.click('#vPlan');
     await page.click('#tabMatch'); await page.waitForTimeout(300);
     await page.click('#startMatch'); await page.waitForTimeout(500);

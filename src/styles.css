@@ -45,12 +45,10 @@ canvas{width:100%;height:auto;display:block;touch-action:none;border-radius:10px
 .wincard{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px}
 .wincard img{width:96px;height:122px;image-rendering:pixelated}
 .wincard h2{font-family:var(--f-display);color:var(--brass);margin:0;font-size:26px;letter-spacing:.08em}
-.viewrow{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.viewrow{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
 .viewrow .tabs button{min-height:34px;padding:5px 14px;font-size:12px}
-.zoom{position:absolute;top:10px;right:10px;z-index:2;display:flex;flex-direction:column;gap:6px}
-.zoom button{width:42px;height:42px;min-height:0;padding:0;font-size:22px;line-height:1;background:rgba(28,19,16,.75);border-color:var(--brass-dk)}
-.v3{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#150e0b;cursor:ew-resize}
-@media(max-width:600px){.v3{aspect-ratio:4/3}}
+
+
 .shootrow{display:flex;gap:8px}
 .msg{min-height:24px;font-size:16px;color:var(--muted);font-style:italic;text-align:center}
 .msg b{color:var(--brass);font-weight:500;font-style:normal}
@@ -161,3 +159,49 @@ details.rules ul{color:var(--ink)}
 .rules2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:4px 20px}
 .rules2 h4{font-family:var(--f-display);font-weight:500;color:var(--brass);margin:4px 0;font-size:15px}
 .rules2 ul{margin:0;padding-left:18px;font-size:15px;display:flex;flex-direction:column;gap:4px}
+
+/* ===== vista 3D: cornice, comandi sovrapposti, modalità Mira / Osserva ===== */
+.v3{width:100%;height:clamp(300px,calc(100svh - 300px),720px);border-radius:10px;overflow:hidden;background:#150e0b;cursor:grab;touch-action:none;
+  box-shadow:0 0 0 1px var(--brass-dk),0 0 0 4px #24160f,0 0 0 5px rgba(201,162,90,.35),0 18px 40px rgba(0,0,0,.45)}
+.v3.orb:active{cursor:grabbing}
+@media(max-width:600px) and (orientation:portrait){.v3{height:min(118vw,calc(100svh - 300px));min-height:300px}}
+.stage.is3d::after{content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;box-shadow:inset 0 0 60px rgba(10,6,4,.55)}
+.zoom{position:absolute;top:12px;right:12px;z-index:3;display:flex;flex-direction:column;gap:8px}
+.zoom button,.fs{width:42px;height:42px;min-height:0;padding:0;font-size:22px;line-height:1;border-radius:50%;
+  background:rgba(28,19,16,.72);border:1px solid var(--brass-dk);color:var(--brass);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+.zoom button:hover,.fs:hover{border-color:var(--brass);color:var(--ink)}
+.zoom svg,.fs svg,.rotchip svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.fs{width:34px;height:34px;border-radius:3px}
+.fs[aria-pressed="true"]{background:var(--brass);color:#24160f}
+.camseg{position:absolute;top:12px;left:12px;z-index:3;background:rgba(28,19,16,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.camseg button{min-height:34px;padding:5px 14px;font-size:12px}
+.camhelp.off{opacity:0}
+.camhelp{transition:opacity .6s;position:absolute;left:12px;right:68px;bottom:12px;z-index:3;font-size:13px;font-style:italic;color:var(--muted);pointer-events:none;text-shadow:0 1px 3px #000}
+.rotchip{align-self:center;margin:0 auto;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:20px;
+  background:rgba(28,19,16,.9);border:1px solid var(--brass-dk);color:var(--ink);font-size:14px;width:max-content;max-width:calc(100% - 24px)}
+.rotchip svg{color:var(--brass);flex:none}
+.rotchip button{width:28px;height:28px;min-height:0;padding:0;border-radius:50%;font-size:16px;line-height:1;flex:none}
+
+/* ===== telefono in orizzontale: tavolo a sinistra a tutta altezza, comandi in colonna a destra ===== */
+@media (orientation:landscape) and (max-height:540px){
+  body{padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(6px,env(safe-area-inset-left,0px));font-size:16px}
+  .wrap{max-width:none;display:grid;grid-template-columns:minmax(0,1fr) clamp(260px,34vw,380px);column-gap:12px;row-gap:8px;align-items:start}
+  .wrap>*,#gameUI>*{grid-column:2;min-width:0}
+  #gameUI{display:contents}
+  header{flex-direction:row;flex-wrap:wrap;justify-content:space-between;gap:6px;padding-top:8px}
+  h1{font-size:17px;letter-spacing:.12em}
+  header .tabs button{padding:5px 9px;min-height:32px;font-size:11px;letter-spacing:.1em}
+  #stageBox{grid-column:1;grid-row:1 / span 40;position:sticky;top:0;height:100svh;display:flex;align-items:center;justify-content:center;padding:6px 0}
+  #cv{max-height:calc(100svh - 12px);width:auto;max-width:100%}
+  .v3{height:calc(100svh - 12px);min-height:0}
+  #school{grid-column:1 / -1}
+  .viewrow{justify-content:flex-start;flex-wrap:nowrap}.viewrow>span{display:none}
+  .score .av{width:34px;height:42px}.score .pts{font-size:22px}.pl{padding:4px 8px;gap:6px}
+  .trainbar{padding:6px 8px}.trainbar p{display:none}
+  .shootrow{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0}
+  .go{min-height:46px}
+  .ctrl{grid-template-columns:1fr}
+  .spinw{grid-template-columns:auto auto}.side{grid-row:3;grid-column:1/3}
+  .camhelp{display:none}
+  .rotchip{display:none!important}
+}

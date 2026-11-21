@@ -54,10 +54,16 @@
     <div class="btns"><button id="redo">Ripeti tiro</button><button id="resetTrain">Posizione iniziale</button></div>
   </div>
 
-  <div class="viewrow" id="viewRow"><span>Vista</span><div class="tabs" role="group" aria-label="Vista"><button id="vPlan" aria-pressed="true">Pianta</button><button id="vPlayer" aria-pressed="false">Giocatore</button></div></div>
+  <div class="viewrow" id="viewRow"><span>Vista</span><div class="tabs" role="group" aria-label="Vista"><button id="vPlan" aria-pressed="true">Pianta</button><button id="vPlayer" aria-pressed="false">Giocatore</button></div><button class="fs" id="fsBtn" aria-pressed="false" title="Schermo intero" aria-label="Schermo intero" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div>
+  <div class="rotchip" id="rotChip" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 14a9 9 0 0 0 7 7M21 10a9 9 0 0 0-7-7"/></svg><span>Gira il telefono: in orizzontale il tavolo è più grande</span><button id="rotX" aria-label="Chiudi">×</button></div>
   <div class="stage" id="stageBox">
     <canvas id="cv" aria-label="Tavolo da biliardo: tocca o trascina per mirare"></canvas>
-    <div class="zoom" id="zoomBox" hidden><button id="zIn" aria-label="Avvicina">+</button><button id="zOut" aria-label="Allontana">−</button></div>
+    <div class="camseg tabs" id="camSeg" role="group" aria-label="Camera" hidden><button id="cAim" aria-pressed="true">Mira</button><button id="cOrb" aria-pressed="false">Osserva</button></div>
+    <div class="zoom" id="zoomBox" hidden>
+      <button id="zIn" aria-label="Avvicina" title="Avvicina">+</button><button id="zOut" aria-label="Allontana" title="Allontana">−</button>
+      <button id="vTop" aria-label="Vista dall'alto" title="Dall'alto" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="1.5"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/></svg></button>
+    </div>
+    <div class="camhelp" id="camHelp" hidden></div>
     <div class="v3" id="v3" hidden aria-label="Vista dal punto di vista di chi tira: trascina per mirare"></div>
     <div class="overlay"><div class="cin" id="cin"><img alt="" id="cinImg"><div><b id="cinT">Cin cin!</b><span id="cinPts"></span><small id="cinD"></small></div></div></div>
     <div class="overlay win" id="win" hidden><div class="wincard"><img alt="" id="winImg"><h2 id="winTxt"></h2><div class="small" id="winScore"></div><button class="go" id="again" style="flex:none;padding:8px 24px">Nuova partita</button></div></div>

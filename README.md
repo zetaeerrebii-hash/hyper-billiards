@@ -7,7 +7,7 @@ Gioco e strumento di apprendimento per il biliardo all'italiana con la stecca: *
 - **Allenamento**: si spostano liberamente le biglie e si provano i tiri. Per ogni posizione l'app propone due colpi (uno diretto e uno di sponda) già verificati con la fisica del gioco, con schema grafico, lettura dei diamanti e una sintesi dei manuali.
 - **Partita**: contro il computer (5 livelli) o contro un amico sullo stesso dispositivo, con personaggi pixel art. Si possono creare nuovi giocatori da un selfie.
 - **Scuola**: dodici schede sulle traiettorie (specchio, Centri Multipli, effetti zonali, garuffa, bricolla, Angolo 50, due sponde a scendere…) e le regole a confronto.
-- **Vista in pianta** e **vista giocatore 3D** (three.js) con zoom.
+- **Vista in pianta** e **vista giocatore 3D** (three.js): modalità «Mira» e «Osserva» (rotazione, zoom, vista dall'alto); impaginazione orizzontale su telefono e schermo intero.
 
 ## Struttura
 
