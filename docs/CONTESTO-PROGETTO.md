@@ -27,6 +27,8 @@ Partito da una spiegazione delle sponde e della lettura dei diamanti, è diventa
 - In fase di test decide e approva solo Daniele Zerbi; il repository resta nel suo account GitHub e si trasferisce all'organizzazione solo a fine test, con l'ok dei soci · velocità nella fase di prova · 20/11/2026
 - three.js servito dal proprio dominio sul sito; nell'artefatto da cdnjs · affidabilità e privacy del prodotto, artefatto leggero · 20/11/2026
 - Prova nel browser e CI obbligatorie su ogni pull request · evitare regressioni su pianta, 3D e telefono · 20/11/2026
+- Vista 3D con due modalità: «Mira» (camera di chi tira, come deciso: lo zoom alza la camera in verticale, la stecca resta in quadro; in più il trascinamento verticale regola lo zoom) e «Osserva» (camera libera: rotazione attorno al tavolo, zoom con rotella o due dita, spostamento con due dita, vista dall'alto, doppio tocco per ripartire) · più controllo senza cambiare la mira decisa · 20/11/2026
+- Telefono in orizzontale: tavolo a sinistra a tutta altezza, comandi in colonna a destra con «Tira» sempre in vista; tasto «Schermo intero» che su Android blocca l'orizzontale; su iPhone un avviso invita a girare il telefono (il sito non può forzare la rotazione) · uso da telefono · 20/11/2026
 
 ## Fonti usate
 Regolamenti FIBIS ed ENDAS; *Le traiettorie del biliardo* (Margutti, BiliardoWeb Magazine); *La Bibbia del biliardo*. Vedi COMMERCIALE.md per i diritti.

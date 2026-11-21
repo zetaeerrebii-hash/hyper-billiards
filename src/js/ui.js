@@ -49,16 +49,25 @@ function init3D(){
   Object.assign(V3,{ok:true,lamps,T,r,sc,cam,balls,pins,pmW,pmR,cue,hints,el,lin,pos:new T.Vector3(),look:new T.Vector3(),snap:true,hintKey:'',game:''});
   const rs=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();};
   rs();if(window.ResizeObserver)new ResizeObserver(rs).observe(el);else window.addEventListener('resize',rs);
-  let drag=null;const pts=new Map();let pinch=null;
-  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:zoom3D};drag=null;return;}
-    if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;drag={x:e.clientX,a:angle};});
+  /* comandi: in «Mira» trascinare in orizzontale ruota la stecca, in verticale alza o abbassa la camera (zoom);
+     in «Osserva» un dito ruota attorno al tavolo, due dita avvicinano e spostano, la rotella avvicina */
+  let drag=null;const pts=new Map();let pinch=null,lastTap=0;
+  const mid=()=>{const [a,b]=[...pts.values()];return{x:(a.x+b.x)/2,y:(a.y+b.y)/2,d:Math.hypot(a.x-b.x,a.y-b.y)};};
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);$('camHelp').classList.add('off');pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){const m=mid();pinch={d:m.d,x:m.x,y:m.y,z:zoom3D,dist:ORB.dist};drag=null;return;}
+    if(ORB.on){const t=performance.now();if(t-lastTap<300){orbReset();lastTap=0;return;}lastTap=t;drag={x:e.clientX,y:e.clientY,orb:true};return;}
+    if(busy()||isCpuTurn()||(mode==='match'&&(!match||match.over)))return;drag={x:e.clientX,y:e.clientY,a:angle,z:zoom3D};});
   el.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pinch&&pts.size>=2){const [a,b]=[...pts.values()];setZoom(pinch.z+(Math.hypot(a.x-b.x,a.y-b.y)/pinch.d-1)*0.9);return;}
-    if(drag)setAngle(drag.a+(e.clientX-drag.x)*0.15);});
+    if(pinch&&pts.size>=2){const m=mid(),f=m.d/pinch.d;
+      if(ORB.on){ORB.dist=clampD(pinch.dist/f);orbPan(m.x-pinch.x,m.y-pinch.y);pinch.x=m.x;pinch.y=m.y;}
+      else setZoom(pinch.z+(f-1)*0.9);return;}
+    if(!drag)return;const ddx=e.clientX-drag.x,ddy=e.clientY-drag.y;
+    if(drag.orb){V3.dragging=performance.now();ORB.yaw-=ddx*0.006;ORB.pitch=Math.max(PMIN,Math.min(PMAX,ORB.pitch+ddy*0.005));drag.x=e.clientX;drag.y=e.clientY;return;}
+    /* diagonale: direzione e altezza cambiano insieme, senza blocco su un asse */
+    V3.dragging=performance.now();setAngle(drag.a+ddx*0.15);setZoom(drag.z-ddy*0.004);});
   const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(!pts.size)drag=null;};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
-  el.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom3D-e.deltaY*0.0012);},{passive:false});
+  el.addEventListener('wheel',e=>{e.preventDefault();if(ORB.on)ORB.dist=clampD(ORB.dist*Math.exp(e.deltaY*0.0012));else setZoom(zoom3D-e.deltaY*0.0012);},{passive:false});
   return true;
 }
 function clearHints3D(){const g=V3.hints;while(g.children.length){const c=g.children.pop();c.geometry&&c.geometry.dispose();c.material&&c.material.dispose();}}
@@ -100,17 +109,24 @@ function render3D(){
   const now=performance.now();
   if(!moving){const key=[angle,b.x,b.y,V3.cam.aspect,zoom3D].join('|');if(key!==V3.aimKey){V3.aimKey=key;const f=aimPose(b,dx,dy);V3.aimPos=f.pos;V3.aimLook=f.look;}V3.standPos=null;}
   else{V3.lastMove=now;if(!V3.standPos){const f=standPose(b,dx,dy);V3.standPos=f.pos;V3.standLook=f.look;}}
-  const tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
-  const k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
+  let tp=moving?V3.standPos:V3.aimPos,tl=moving?V3.standLook:V3.aimLook;
+  let k=moving?0.04:(now-(V3.lastMove||0)<1500?0.05:0.15);
+  if(ORB.on){const o=orbPose();tp=o.pos;tl=o.look;k=now-(V3.dragging||0)<250?0.45:0.25;}
+  else if(!moving&&now-(V3.dragging||0)<250)k=0.3; /* mentre il dito si muove la camera segue subito */
   if(V3.snap){V3.pos.copy(tp);V3.look.copy(tl);V3.snap=false;}else{V3.pos.lerp(tp,k);V3.look.lerp(tl,k);}
   /* la camera non deve mai finire dentro o sotto la stecca: resta sempre sopra la sua linea */
-  if(V3.cue.visible){const bx=b.x-PW/2,bz=b.y-PH/2,d=-((V3.pos.x-bx)*dx+(V3.pos.z-bz)*dy),lat=Math.abs((V3.pos.x-bx)*(-dy)+(V3.pos.z-bz)*dx);
+  if(V3.cue.visible&&!ORB.on){const bx=b.x-PW/2,bz=b.y-PH/2,d=-((V3.pos.x-bx)*dx+(V3.pos.z-bz)*dy),lat=Math.abs((V3.pos.x-bx)*(-dy)+(V3.pos.z-bz)*dx);
     if(d>0&&d<b.r+4+pullNow+640&&lat<40){const cueH=b.r+(d)*Math.tan(6*Math.PI/180)+12;if(V3.pos.y<cueH+30)V3.pos.y=cueH+30;}}
   V3.cam.position.copy(V3.pos);V3.cam.lookAt(V3.look);
   const showLamps=V3.pos.y<430;V3.lamps.forEach(m=>m.visible=showLamps);
   hints3D();
   V3.r.render(V3.sc,V3.cam);
 }
+/* tutto il tavolo in quadro, sponde di legno comprese, lasciando libero lo spazio dei comandi sovrapposti (in alto) */
+function tableInView(c){const T=V3.T,v=V3.tv||(V3.tv=new T.Vector3()),ex=PW/2+RW+8,ez=PH/2+RW+8,h=37/MM+2;
+  const H=V3.el.clientHeight||400,top=1-2*58/H;
+  for(const [x,z] of [[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]]){v.set(x,h,z).project(c);if(!(v.z<1&&Math.abs(v.x)<0.94&&v.y>-0.9&&v.y<top))return false;}
+  return true;}
 function fitPose(look,ux,uz,k,dmin){
   const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
   const ex=PW/2+40,ez=PH/2+40,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let d=dmin;
@@ -122,17 +138,30 @@ function fitPose(look,ux,uz,k,dmin){
 }
 /* dove sta in piedi chi tira: dietro la biglia, appena fuori dal bordo del tavolo */
 function standSpot(b,dx,dy){
-  const ex=PW/2+RW+45,ez=PH/2+RW+45;let t=60;
-  for(;t<900;t+=10){const x=b.x-dx*t-PW/2,z=b.y-dy*t-PH/2;if(Math.abs(x)>ex||Math.abs(z)>ez)break;}
-  return{x:b.x-dx*Math.min(t,Math.max(120,t)),y:b.y-dy*Math.min(t,Math.max(120,t))};
+  /* dietro la biglia lungo la linea di mira, fino a uscire dal tavolo: chi tira sta sempre fuori dal piano,
+     così la camera vede tutto il tavolo davanti a sé (prima si fermava a 900 e poteva restare sopra il panno) */
+  const ex=PW/2+RW+45,ez=PH/2+RW+45;let t=120;
+  for(;t<2400;t+=10){const x=b.x-dx*t-PW/2,z=b.y-dy*t-PH/2;if(Math.abs(x)>ex||Math.abs(z)>ez)break;}
+  return{x:b.x-dx*t,y:b.y-dy*t};
 }
-/* sale in verticale finché vede tutto il tavolo, senza allontanarsi */
+/* spigoli esterni delle sponde proiettati sullo schermo */
+function tableBox(c){const T=V3.T,v=V3.tv||(V3.tv=new T.Vector3()),ex=PW/2+RW+8,ez=PH/2+RW+8,h=37/MM+2;
+  const r={front:true,x0:9,x1:-9,y0:9,y1:-9};
+  for(const [x,z] of [[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]]){v.set(x,h,z).project(c);if(!(v.z<1))r.front=false;
+    r.x0=Math.min(r.x0,v.x);r.x1=Math.max(r.x1,v.x);r.y0=Math.min(r.y0,v.y);r.y1=Math.max(r.y1,v.y);}
+  return r;}
+/* sale in verticale finché vede tutto il tavolo, senza allontanarsi; a ogni altezza inclina lo sguardo
+   in modo che il tavolo stia al centro della fascia libera (niente cielo vuoto sopra o sotto) */
 function fitHeight(hx,hz,look,h0){
   const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
-  const ex=PW/2+30,ez=PH/2+30,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3();let h=h0;
-  for(let i=0;i<80;i++){c.position.set(hx,h,hz);c.lookAt(look);c.updateMatrixWorld();
-    if(cs.every(([x,z])=>{v.set(x,0,z).project(c);return v.z<1&&Math.abs(v.x)<0.97&&Math.abs(v.y)<0.95;}))break;h+=25;}
-  return{pos:c.position.clone(),look:look.clone()};
+  const H=V3.el.clientHeight||400,top=1-2*58/H,bot=-0.9,mid=(top+bot)/2,lk=new T.Vector3(),q=new T.Vector3(),dir=new T.Vector3();let h=h0;
+  for(let i=0;i<260;i++){c.position.set(hx,h,hz);lk.copy(look);
+    for(let j=0;j<4;j++){c.lookAt(lk);c.updateMatrixWorld();const r=tableBox(c);if(!r.front)break;
+      const d=(r.y0+r.y1)/2-mid;if(Math.abs(d)<0.01)break;
+      q.set(0,d,0.5).unproject(c);dir.copy(q).sub(c.position);if(dir.y>=-1e-3)break;
+      const t=-c.position.y/dir.y;lk.copy(c.position).addScaledVector(dir,t);}
+    c.lookAt(lk);c.updateMatrixWorld();if(tableInView(c))break;h+=12;}
+  return{pos:c.position.clone(),look:lk.clone()};
 }
 function aimPose(b,dx,dy){
   const st=standSpot(b,dx,dy),lk0=P3((b.x+dx*220+PW/2)/2,(b.y+dy*220+PH/2)/2,0);
@@ -146,20 +175,63 @@ function aimPose(b,dx,dy){
   for(let i=0;i<14;i++){c.position.copy(pos);c.lookAt(look);c.updateMatrixWorld();q.copy(tgt).project(c);if(q.z<1&&q.y>-0.88)break;look.lerp(bp,0.18);}
   return{pos,look};
 }
-let zoom3D=0.55;try{const zz=parseFloat(localStorage.getItem('mg-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
-function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';try{localStorage.setItem('mg-zoom',String(zoom3D));}catch(e){}}
+let zoom3D=0;try{const zz=parseFloat(localStorage.getItem('hb-zoom'));if(zz>=0&&zz<=1)zoom3D=zz;}catch(e){}
+let zSave=0;function setZoom(z){zoom3D=Math.max(0,Math.min(1,z));V3.aimKey='';clearTimeout(zSave);zSave=setTimeout(()=>{try{localStorage.setItem('hb-zoom',String(zoom3D));}catch(e){}},300);}
+/* ===== modalità «Osserva»: camera libera attorno al tavolo ===== */
+const PMIN=8*Math.PI/180,PMAX=89*Math.PI/180,DMIN=180,DMAX=3400;
+const ORB={on:false,yaw:-Math.PI/2,pitch:0.6,dist:1500,tx:0,tz:0};
+const clampD=d=>Math.max(DMIN,Math.min(DMAX,d));
+function orbPose(){const T=V3.T,c=Math.cos(ORB.pitch);
+  return{pos:new T.Vector3(ORB.tx+ORB.dist*c*Math.cos(ORB.yaw),ORB.dist*Math.sin(ORB.pitch),ORB.tz+ORB.dist*c*Math.sin(ORB.yaw)),look:new T.Vector3(ORB.tx,0,ORB.tz)};}
+/* lo spostamento con due dita trascina il piano del tavolo sotto le dita */
+function orbPan(px,py){const s=ORB.dist*0.0016,cy=Math.cos(ORB.yaw),sy=Math.sin(ORB.yaw),k=s/Math.max(.4,Math.sin(ORB.pitch));
+  ORB.tx=Math.max(-PW/2,Math.min(PW/2,ORB.tx-px*s*sy-py*k*cy));ORB.tz=Math.max(-PH/2,Math.min(PH/2,ORB.tz+px*s*cy-py*k*sy));}
+/* parte da dove sta la camera adesso, guardando il centro del tavolo */
+function orbFromCam(){const p=V3.pos;ORB.tx=0;ORB.tz=0;const h=Math.hypot(p.x,p.z);
+  ORB.yaw=Math.atan2(p.z,p.x);ORB.dist=clampD(Math.hypot(h,p.y));ORB.pitch=Math.max(PMIN,Math.min(PMAX,Math.atan2(p.y,h)));}
+function orbReset(){const b=S.balls[me()],a=angle*Math.PI/180;ORB.tx=0;ORB.tz=0;ORB.yaw=Math.atan2(-Math.sin(a),-Math.cos(a));ORB.pitch=0.62;ORB.dist=fitDist(ORB.pitch);}
+function orbTop(){ORB.tx=0;ORB.tz=0;ORB.pitch=PMAX;ORB.yaw=Math.PI/2;ORB.dist=fitDist(PMAX);}
+/* distanza minima perché tutto il tavolo, sponde comprese, stia in quadro */
+function fitDist(pitch){const T=V3.T,c=V3.fitCam||(V3.fitCam=new T.PerspectiveCamera());c.fov=V3.cam.fov;c.aspect=V3.cam.aspect;c.near=2;c.far=6000;c.updateProjectionMatrix();
+  const ex=PW/2+RW+20,ez=PH/2+RW+20,cs=[[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]],v=new T.Vector3(),o=new T.Vector3();let d=400;
+  for(let i=0;i<200;i++){const cp=Math.cos(pitch);c.position.set(ORB.tx+d*cp*Math.cos(ORB.yaw),d*Math.sin(pitch),ORB.tz+d*cp*Math.sin(ORB.yaw));c.lookAt(o.set(ORB.tx,0,ORB.tz));c.updateMatrixWorld();
+    if(tableInView(c))break;d+=25;}
+  return clampD(d);}
+function setCam(m){const was=ORB.on;ORB.on=m==='orb';if(ORB.on&&!was&&V3.ok)orbReset();V3.aimKey='';
+  $('cAim').setAttribute('aria-pressed',String(!ORB.on));$('cOrb').setAttribute('aria-pressed',String(ORB.on));$('vTop').hidden=!ORB.on;
+  $('v3').classList.toggle('orb',ORB.on);showHelp();$('camHelp').textContent=ORB.on?(coarse()?'Un dito: gira attorno · due dita: avvicina e sposta · doppio tocco: riparti':'Trascina: gira attorno · rotella: avvicina · doppio clic: riparti'):(coarse()?'Trascina di lato: mira · in su o in giù: alza o abbassa la camera':'Trascina di lato: mira · in su o in giù o rotella: alza o abbassa la camera');}
+let helpT=0;function showHelp(){const h=$('camHelp');h.classList.remove('off');clearTimeout(helpT);helpT=setTimeout(()=>h.classList.add('off'),4500);}
+const coarse=()=>window.matchMedia&&matchMedia('(pointer:coarse)').matches;
 function standPose(b,dx,dy){
   const st=standSpot(b,dx,dy);return fitHeight(st.x-PW/2,st.y-PH/2,new V3.T.Vector3(0,0,0),260);
 }
 function setView(v){
   if(v==='3d'&&!init3D()){msg('La vista giocatore non è disponibile su questo dispositivo.');v='plan';}
   view=v;$('vPlan').setAttribute('aria-pressed',String(v==='plan'));$('vPlayer').setAttribute('aria-pressed',String(v==='3d'));
-  $('cv').hidden=v==='3d';$('v3').hidden=v!=='3d';$('zoomBox').hidden=v!=='3d';
+  $('cv').hidden=v==='3d';$('v3').hidden=v!=='3d';$('zoomBox').hidden=v!=='3d';$('camSeg').hidden=v!=='3d';$('camHelp').hidden=v!=='3d';$('stageBox').classList.toggle('is3d',v==='3d');
   if(v==='3d'){V3.snap=true;V3.hintKey='';V3.game='';window.dispatchEvent(new Event('resize'));
-    if(inHand||mode==='train')msg(mode==='train'?'Vista giocatore: trascina a destra o sinistra per mirare, usa + e − (o due dita) per avvicinarti. Per spostare le biglie torna alla pianta.':'Per posizionare la biglia in mano torna alla vista in pianta.');}
+    setCam(ORB.on?'orb':'aim');if(inHand||mode==='train')msg(mode==='train'?'Vista giocatore: «Mira» per tirare, «Osserva» per girare attorno al tavolo. Per spostare le biglie torna alla pianta.':'Per posizionare la biglia in mano torna alla vista in pianta.');}
   try{localStorage.setItem('mg-view',v);}catch(e){}
 }
-$('zIn').onclick=()=>setZoom(zoom3D+0.15);$('zOut').onclick=()=>setZoom(zoom3D-0.15);
+$('zIn').onclick=()=>{if(ORB.on)ORB.dist=clampD(ORB.dist*0.8);else setZoom(zoom3D+0.15);};
+$('zOut').onclick=()=>{if(ORB.on)ORB.dist=clampD(ORB.dist*1.25);else setZoom(zoom3D-0.15);};
+$('cAim').onclick=()=>setCam('aim');$('cOrb').onclick=()=>setCam('orb');$('vTop').onclick=()=>{if(!ORB.on)setCam('orb');orbTop();};
+/* schermo intero e orizzontale: il blocco dell'orientamento funziona solo a schermo intero (Android);
+   su iPhone il sito non può ruotare lo schermo: basta girare il telefono con la rotazione automatica attiva */
+const fsOK=!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+$('fsBtn').hidden=!fsOK;
+$('fsBtn').onclick=async()=>{
+  const d=document,inFs=d.fullscreenElement||d.webkitFullscreenElement;
+  try{if(inFs){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return;}
+    const el=d.documentElement;await (el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+    if(screen.orientation&&screen.orientation.lock&&coarse())await screen.orientation.lock('landscape').catch(()=>{});
+  }catch(e){msg('Lo schermo intero non è disponibile qui: gira il telefono per la vista orizzontale.');}};
+const fsSync=()=>{const on=!!(document.fullscreenElement||document.webkitFullscreenElement);$('fsBtn').setAttribute('aria-pressed',String(on));$('fsBtn').title=on?'Esci dallo schermo intero':'Schermo intero';};
+document.addEventListener('fullscreenchange',fsSync);document.addEventListener('webkitfullscreenchange',fsSync);
+let rotClosed=false;try{rotClosed=sessionStorage.getItem('hb-rot')==='1';}catch(e){}
+const rotSync=()=>{$('rotChip').hidden=rotClosed||!coarse()||!matchMedia('(orientation:portrait)').matches||$('gameUI').hidden;};
+$('rotX').onclick=()=>{rotClosed=true;try{sessionStorage.setItem('hb-rot','1');}catch(e){}rotSync();};
+window.addEventListener('resize',rotSync);rotSync();if(screen.orientation)screen.orientation.addEventListener('change',rotSync);
 $('vPlan').onclick=()=>setView('plan');$('vPlayer').onclick=()=>setView('3d');
 
 /* ===== regole in breve (riusate in pagina e nella scuola) ===== */
